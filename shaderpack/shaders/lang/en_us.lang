@@ -1,0 +1,10 @@
+option.shadowMapResolution=Shadow Quality
+option.shadowMapResolution.comment=Resolution of the shadow map. Higher is sharper and slower.
+option.shadowDistance=Shadow Distance
+option.FOG_DENSITY=Coal-Smoke Haze
+option.FOG_DENSITY.comment=Extra haze on top of the game's fog. Thickest at night and in rain.
+option.EXPOSURE=Exposure
+option.BLOOM_STRENGTH=Lamp Glow
+option.BLOOM_THRESHOLD=Glow Threshold
+option.GASLIGHT_FLICKER=Gaslight Flicker
+option.GRADE_STRENGTH=Tingen Color Grade

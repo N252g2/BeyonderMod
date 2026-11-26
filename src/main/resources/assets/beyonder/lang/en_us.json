@@ -16,5 +16,7 @@
   "beyonder.configuration.gradingStrength": "Grading strength",
   "beyonder.configuration.tingenFog": "Tingen fog",
   "beyonder.configuration.fogStrength": "Fog strength",
-  "beyonder.configuration.nightTint": "Red moon night tint"
+  "beyonder.configuration.nightTint": "Red moon night tint",
+  "message.beyonder.marker.added": "Spirit marker \"%s\" placed. Open your Spirit Vision to see it.",
+  "message.beyonder.marker.cleared": "Spirit markers cleared."
 }

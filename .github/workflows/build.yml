@@ -23,27 +23,42 @@ jobs:
           java-version: "21"
           distribution: temurin
 
+      - name: Check shaders
+        run: |
+          sudo apt-get install -y -qq glslang-tools >/dev/null
+          python3 tools/check_shaders.py glslangValidator
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build
         run: ./gradlew build --stacktrace
 
-      - name: Find jar
-        id: jar
+      - name: Package
+        id: pkg
         run: |
-          JAR=$(ls build/libs/beyonder-*.jar | grep -v -- '-sources' | head -n1)
-          echo "path=$JAR" >> "$GITHUB_OUTPUT"
-          echo "name=$(basename "$JAR")" >> "$GITHUB_OUTPUT"
-          echo "sha1=$(sha1sum "$JAR" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          echo "sha512=$(sha512sum "$JAR" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
-          echo "size=$(stat -c%s "$JAR")" >> "$GITHUB_OUTPUT"
+          VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
+          mkdir -p dist
+          cp "$(ls build/libs/beyonder-*.jar | grep -v -- '-sources' | head -n1)" "dist/beyonder-$VERSION.jar"
+          (cd shaderpack && zip -q -X -r "../dist/BeyonderShaders-$VERSION.zip" shaders README.txt)
+          python3 - "$VERSION" <<'PY'
+          import hashlib, json, os, sys
+          version = sys.argv[1]
+          files = {}
+          for kind, name in (("mod", f"beyonder-{version}.jar"), ("shaderpack", f"BeyonderShaders-{version}.zip")):
+              data = open(os.path.join("dist", name), "rb").read()
+              files[kind] = {"name": name, "size": len(data),
+                             "sha1": hashlib.sha1(data).hexdigest(), "sha512": hashlib.sha512(data).hexdigest()}
+          json.dump({"version": version, "files": files}, open("dist/release.json", "w"), indent=2)
+          PY
+          cat dist/release.json
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Upload jar
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: beyonder-mod
-          path: ${{ steps.jar.outputs.path }}
+          name: beyonder-build
+          path: dist/*
 
       # Every push to main publishes a build that the pack can point at.
       - name: Publish build
@@ -51,15 +66,15 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2)
+          VERSION=${{ steps.pkg.outputs.version }}
           TAG="v${VERSION}-build.${{ github.run_number }}"
-          cat > notes.md <<NOTES
-          Automatic build of \`${GITHUB_SHA::7}\`.
-
-          | File | Size | SHA-1 | SHA-512 |
-          |---|---|---|---|
-          | ${{ steps.jar.outputs.name }} | ${{ steps.jar.outputs.size }} | ${{ steps.jar.outputs.sha1 }} | ${{ steps.jar.outputs.sha512 }} |
-          NOTES
-          gh release create "$TAG" "${{ steps.jar.outputs.path }}" \
+          {
+            echo "Automatic build of \`${GITHUB_SHA::7}\`. The pack reads \`release.json\` for file hashes."
+            echo
+            echo '```json'
+            cat dist/release.json
+            echo '```'
+          } > notes.md
+          gh release create "$TAG" dist/* \
             --target "$GITHUB_SHA" --title "Beyonder $VERSION (build ${{ github.run_number }})" \
             --notes-file notes.md --prerelease

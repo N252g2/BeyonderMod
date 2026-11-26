@@ -29,6 +29,9 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(SpiritVision::onClientTick);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onComputeFov);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(SpiritRenderer::onRenderStage);
+        NeoForge.EVENT_BUS.addListener(SpiritMarkers::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(SpiritMarkers::onLoggingOut);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {

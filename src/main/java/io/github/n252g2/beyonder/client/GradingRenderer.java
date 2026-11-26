@@ -4,6 +4,7 @@ import com.google.gson.JsonSyntaxException;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import io.github.n252g2.beyonder.Beyonder;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.PostChain;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +23,36 @@ public final class GradingRenderer {
     private static int width = -1;
     private static int height = -1;
 
+    private static Method irisInstance;
+    private static Method irisShaderPackInUse;
+    private static boolean irisChecked;
+
     private GradingRenderer() {}
+
+    /**
+     * True while an Iris shader pack is running. Beyonder Shaders applies the same grade itself,
+     * so the mod only adds Spirit Vision on top. Uses reflection so Iris stays optional.
+     */
+    static boolean irisShadersActive() {
+        if (!irisChecked) {
+            irisChecked = true;
+            try {
+                Class<?> api = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                irisInstance = api.getMethod("getInstance");
+                irisShaderPackInUse = api.getMethod("isShaderPackInUse");
+            } catch (ReflectiveOperationException | LinkageError notInstalled) {
+                irisInstance = null;
+            }
+        }
+        if (irisInstance == null) {
+            return false;
+        }
+        try {
+            return (Boolean) irisShaderPackInUse.invoke(irisInstance.invoke(null));
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            return false;
+        }
+    }
 
     static void reset() {
         if (chain != null) {
@@ -57,7 +87,7 @@ public final class GradingRenderer {
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float spirit = SpiritVision.amount(partial);
         boolean overworld = mc.level.dimension() == Level.OVERWORLD;
-        float strength = ClientConfig.bool(ClientConfig.COLOR_GRADING, true) && overworld
+        float strength = ClientConfig.bool(ClientConfig.COLOR_GRADING, true) && overworld && !irisShadersActive()
                 ? ClientConfig.number(ClientConfig.GRADING_STRENGTH, 1.0F)
                 : 0.0F;
         if (strength <= 0.0F && spirit <= 0.001F) {

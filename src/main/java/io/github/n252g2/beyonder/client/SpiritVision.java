@@ -10,7 +10,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
@@ -20,7 +19,8 @@ import org.lwjgl.glfw.GLFW;
 
 /**
  * The Seer's first ability. Opening Spirit Vision washes the world into a watercolor palette
- * and reveals the auras of living things around you.
+ * and reveals the auras of living things around you (drawn by {@link SpiritRenderer}),
+ * along with waypoint markers ({@link SpiritMarkers}).
  *
  * <p>For now it is open to everyone for testing; it will be gated behind the Seer pathway
  * and cost Spirituality once those systems exist.</p>
@@ -31,10 +31,6 @@ public final class SpiritVision {
 
     private static final float FADE_PER_TICK = 1.0F / 12.0F; // about 0.6 seconds
     private static final double AURA_RANGE = 24.0;
-
-    private static final Vector3f AURA_PLAYER = new Vector3f(0.45F, 0.68F, 1.00F);
-    private static final Vector3f AURA_HOSTILE = new Vector3f(0.95F, 0.22F, 0.28F);
-    private static final Vector3f AURA_LIVING = new Vector3f(0.50F, 0.95F, 0.62F);
 
     private static boolean active;
     private static float amount;
@@ -86,23 +82,26 @@ public final class SpiritVision {
                 : "message.beyonder.spirit_vision.close"), true);
     }
 
+    /** Strong spirits shed a few drifting wisps in their aura colour; the halo itself is drawn by SpiritRenderer. */
     private static void spawnAuras(Minecraft mc) {
-        if (mc.level.getGameTime() % 2L != 0L) {
+        if (mc.level.getGameTime() % 3L != 0L) {
             return;
         }
         RandomSource random = mc.level.getRandom();
         for (LivingEntity entity : mc.level.getEntitiesOfClass(LivingEntity.class,
                 mc.player.getBoundingBox().inflate(AURA_RANGE), e -> e != mc.player && e.isAlive())) {
-            Vector3f color = entity instanceof Player ? AURA_PLAYER
-                    : entity instanceof Enemy ? AURA_HOSTILE
-                    : AURA_LIVING;
-            float scale = 0.6F + Math.min(entity.getBbHeight(), 3.0F) * 0.25F;
-            DustParticleOptions dust = new DustParticleOptions(color, scale);
-            for (int i = 0; i < 2; i++) {
-                double x = entity.getX() + (random.nextDouble() - 0.5) * entity.getBbWidth() * 1.5;
-                double y = entity.getY() + random.nextDouble() * entity.getBbHeight() * 1.1;
-                double z = entity.getZ() + (random.nextDouble() - 0.5) * entity.getBbWidth() * 1.5;
-                mc.level.addParticle(dust, x, y, z, 0.0, 0.02, 0.0);
+            float strength = SpiritAura.strength(entity);
+            if (strength < SpiritAura.NOTABLE) {
+                continue;
+            }
+            float[] c = SpiritAura.color(entity, strength);
+            DustParticleOptions dust = new DustParticleOptions(new Vector3f(c[0], c[1], c[2]), 0.8F + strength * 0.1F);
+            int count = strength >= SpiritAura.DANGEROUS ? 2 : 1;
+            for (int i = 0; i < count; i++) {
+                double x = entity.getX() + (random.nextDouble() - 0.5) * entity.getBbWidth() * 1.6;
+                double y = entity.getY() + random.nextDouble() * entity.getBbHeight() * 1.2;
+                double z = entity.getZ() + (random.nextDouble() - 0.5) * entity.getBbWidth() * 1.6;
+                mc.level.addParticle(dust, x, y, z, 0.0, 0.03, 0.0);
             }
         }
     }
