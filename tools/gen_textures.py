@@ -175,41 +175,61 @@ def value_noise(x, y, seed):
     return (a + (b - a) * fx) + ((c + (d - c) * fx) - (a + (b - a) * fx)) * fy
 
 
+AURA_FRAMES = 16
+BEAM_FRAMES = 16
+
+
 def aura():
-    """Soft halo, brightest near the body's edge, with wisps rising off the top. White; tinted in game."""
-    size = 128
-    img = Image.new("RGBA", (size, size))
+    """Animated halo: a flipbook of AURA_FRAMES frames stacked vertically (white; tinted in game).
+
+    Wisps stream outward and upward from the body's edge. The loop is seamless: each frame
+    cross-fades two noise fields offset by one full cycle.
+    """
+    size = 64
+    img = Image.new("RGBA", (size, size * AURA_FRAMES))
     px = img.load()
-    for y in range(size):
-        for x in range(size):
-            u = (x + 0.5) / size * 2 - 1
-            v = (y + 0.5) / size * 2 - 1
-            d = math.hypot(u, v * 1.05)
-            # seamless wisps: sample noise on a circle, longer on the upper half (v < 0 is up)
-            ca, sa = (u / d, v / d) if d > 1e-6 else (1.0, 0.0)
-            wisp = value_noise(ca * 2.2 + 10, sa * 2.2 + d * 3.0, 5)
-            up = max(0.0, -v)
-            reach = 0.70 + 0.22 * wisp + 0.18 * up * wisp
-            rim = math.exp(-((d - 0.42) ** 2) / 0.07)
-            core = math.exp(-(d ** 2) / 0.30) * 0.30
-            edge = max(0.0, min(1.0, (reach - d) / 0.35))
-            a = min(1.0, rim * 0.75 + core) * edge
-            px[x, y] = (255, 255, 255, clamp(a * 255))
+    for f in range(AURA_FRAMES):
+        t = f / AURA_FRAMES
+        for y in range(size):
+            for x in range(size):
+                u = (x + 0.5) / size * 2 - 1
+                v = (y + 0.5) / size * 2 - 1
+                d = math.hypot(u, v * 1.05)
+                ca, sa = (u / d, v / d) if d > 1e-6 else (1.0, 0.0)
+                up = max(0.0, -v)  # v < 0 is up
+
+                def wisps(phase):
+                    # flow outward, and faster upward
+                    flow = d * 3.0 - phase * (2.4 + 2.0 * up)
+                    return value_noise(ca * 2.2 + 10, sa * 2.2 + flow, 5)
+
+                wisp = (1 - t) * wisps(t) + t * wisps(t - 1)
+                shimmer = (1 - t) * value_noise(ca * 2.5 + 3, sa * 2.5 + t * 3, 9) + t * value_noise(ca * 2.5 + 3, sa * 2.5 + (t - 1) * 3, 9)
+                reach = 0.66 + 0.26 * wisp + 0.20 * up * wisp
+                rim = math.exp(-((d - 0.42) ** 2) / 0.07) * (0.85 + 0.2 * shimmer)
+                core = math.exp(-(d ** 2) / 0.30) * 0.30
+                edge = max(0.0, min(1.0, (reach - d) / 0.35))
+                a = min(1.0, rim * 0.75 + core) * edge
+                px[x, y + f * size] = (255, 255, 255, clamp(a * 255))
     save(img, MISC, "aura.png")
 
 
 def marker_beam():
-    """A column of light: bright core, soft sides, fading out toward the top."""
+    """Animated light column: bands of light rise through a soft beam that fades toward the top."""
     w, h = 32, 128
-    img = Image.new("RGBA", (w, h))
+    img = Image.new("RGBA", (w, h * BEAM_FRAMES))
     px = img.load()
-    for y in range(h):
-        top = (y + 0.5) / h  # 0 at top, 1 at bottom
-        fade = top ** 0.7
-        for x in range(w):
-            u = (x + 0.5) / w * 2 - 1
-            a = (math.exp(-(u ** 2) / 0.05) * 0.9 + math.exp(-(u ** 2) / 0.35) * 0.35) * fade
-            px[x, y] = (255, 255, 255, clamp(a * 255))
+    for f in range(BEAM_FRAMES):
+        t = f / BEAM_FRAMES
+        for y in range(h):
+            top = (y + 0.5) / h  # 0 at top, 1 at bottom
+            fade = top ** 0.7
+            band = 0.5 + 0.5 * math.sin((top * 4.0 + t) * 2 * math.pi)  # 4 bands, one cycle per loop
+            for x in range(w):
+                u = (x + 0.5) / w * 2 - 1
+                core = math.exp(-(u ** 2) / 0.05) * (0.65 + 0.35 * band)
+                glow = math.exp(-(u ** 2) / 0.35) * (0.25 + 0.2 * band)
+                px[x, y + f * h] = (255, 255, 255, clamp((core + glow) * fade * 255))
     save(img, MISC, "marker_beam.png")
 
 

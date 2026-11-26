@@ -10,7 +10,8 @@ It ships to players through the [Beyonder Launcher](https://github.com/N252g2/Be
 - **Red moon**: an original eight-phase moon texture.
 - **Street blocks**: gas lamp, lamp post, Tingen cobbles, soot-stained bricks (Beyonder creative tab).
 - **Spirit Vision** (default key **V**): the world washes into watercolor. Players and mobs show a faint halo whose
-  size, colour and pulse follow how strong they are (pale → teal → gold → crimson → violet; hostile ones lean red).
+  size, colour and pulse follow how strong they are. Halos are animated: wisps stream off them, faster for stronger spirits,
+  and marker beams carry rising bands of light. Halo colours run pale → teal → gold → crimson → violet; hostile ones lean red.
   You can sense halos faintly through walls. Spirit markers (waypoints) appear as columns of light with a label;
   test with `/spiritmark <name>` and `/spiritmark clear`.
 
