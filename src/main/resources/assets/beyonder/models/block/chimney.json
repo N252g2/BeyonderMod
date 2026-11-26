@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "beyonder:block/chimney_top",
+    "side": "beyonder:block/soot_bricks"
+  }
+}

@@ -8,6 +8,8 @@ uniform float viewWidth;
 uniform float viewHeight;
 uniform float sunAngle;
 uniform float frameTimeCounter;
+uniform float rainStrength;
+uniform int moonPhase;
 
 varying vec2 texcoord;
 
@@ -16,7 +18,7 @@ vec3 tonemap(vec3 c) {
     return clamp((c * (2.51 * c + 0.03)) / (c * (2.43 * c + 0.59) + 0.14), 0.0, 1.0);
 }
 
-vec3 grade(vec3 c, vec2 uv, float night) {
+vec3 grade(vec3 c, vec2 uv, float night, float crimson) {
     float l = luma(c);
     c = mix(vec3(l), c, mix(0.72, 0.55, night));
     c *= mix(vec3(0.82, 0.93, 1.08), vec3(1.10, 0.98, 0.82), smoothstep(0.25, 0.85, l));
@@ -24,7 +26,10 @@ vec3 grade(vec3 c, vec2 uv, float night) {
     c = mix(c, c * vec3(0.95, 1.02, 0.94), 0.5 * mid);
     c = clamp(c, 0.0, 1.0);
     c = mix(c, c * c * (3.0 - 2.0 * c), 0.25);
+    c = mix(c, vec3(luma(c)) * vec3(0.92, 0.96, 1.02), rainStrength * 0.35);
+    c *= 1.0 - 0.12 * rainStrength;
     c = mix(c, c * vec3(0.82, 0.88, 1.08) + vec3(0.010, 0.012, 0.022), night * 0.8);
+    c = mix(c, c * vec3(1.30, 0.55, 0.55) + vec3(0.035, 0.0, 0.004), crimson * 0.75);
     vec2 d = uv - 0.5;
     d.x *= viewWidth / viewHeight;
     c *= 1.0 - smoothstep(0.35, 1.05, length(d)) * mix(0.30, 0.45, night);
@@ -36,6 +41,7 @@ void main() {
     vec3 color = texture2D(colortex0, texcoord).rgb * EXPOSURE;
     color = toGamma(tonemap(color));
     float night = 1.0 - dayFactor(sunAngle);
-    color = mix(color, grade(color, texcoord, night), GRADE_STRENGTH);
+    float crimson = moonPhase == 0 ? night : 0.0; // full moon: the crimson night
+    color = mix(color, grade(color, texcoord, night, crimson), GRADE_STRENGTH);
     gl_FragColor = vec4(color, 1.0);
 }

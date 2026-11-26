@@ -105,22 +105,34 @@ public final class Beyonders {
     // ---------------------------------------------------------------- digestion (acting)
 
     /**
-     * Acting digests the potion. Each Sequence digests from playing its role; a Seer digests by
-     * divining and by observing with Spirit Vision. Later Sequences digest more slowly from Seer acts.
+     * Acting digests the potion, but only when you play the role of your current Sequence:
+     * a Seer divines and observes, a Clown performs in battle, a Magician deceives with tricks.
      */
-    public static void act(ServerPlayer player, float amount) {
+    public static void act(ServerPlayer player, int forSequence, float amount) {
         BeyonderData d = get(player);
-        if (!d.isBeyonder() || d.digestion() >= 100.0F) {
+        if (d.pathway() != Pathway.SEER || d.sequence() != forSequence || d.digestion() >= 100.0F) {
             return;
         }
-        float scale = d.sequence() == 9 ? 1.0F : d.sequence() == 8 ? 0.6F : 0.4F; // TODO: Clown and Magician acting
-        d.setDigestion(d.digestion() + amount * scale);
+        d.setDigestion(d.digestion() + amount);
         if (d.digestion() >= 100.0F) {
             player.displayClientMessage(Component.literal("The potion is fully digested. You are ready to advance.")
                     .withStyle(ChatFormatting.GOLD), false);
             player.playNotifySound(SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 1.0F, 0.6F);
         }
         sync(player);
+    }
+
+    /** How to digest each Sequence, shown when you reach it. */
+    public static String actingHint(Pathway pathway, int sequence) {
+        if (pathway != Pathway.SEER) {
+            return "";
+        }
+        return switch (sequence) {
+            case 9 -> "Act as a Seer: divine with the Spirit Pendulum and observe with your Spirit Vision (V).";
+            case 8 -> "Act as a Clown: perform in battle. Defeat hostile creatures with Card Throw (G to select, R to use).";
+            case 7 -> "Act as a Magician: deceive and amaze. Flame Jump, Air Bullet and Paper Substitute all count.";
+            default -> "";
+        };
     }
 
     // ---------------------------------------------------------------- loss of control
@@ -199,6 +211,11 @@ public final class Beyonders {
         player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0));
         player.playNotifySound(SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.0F, 0.6F);
         player.displayClientMessage(Component.literal(message).withStyle(ChatFormatting.GOLD), false);
+        BeyonderData d = get(player);
+        String hint = actingHint(d.pathway(), d.sequence());
+        if (!hint.isEmpty()) {
+            player.displayClientMessage(Component.literal(hint).withStyle(ChatFormatting.GRAY), false);
+        }
         sync(player);
     }
 
@@ -228,7 +245,7 @@ public final class Beyonders {
                         .withStyle(ChatFormatting.DARK_PURPLE), true);
                 addLossOfControl(player, 8.0F);
             } else if (d.pathway() == Pathway.SEER && hasLivingNearby(player)) {
-                act(player, 0.25F); // observing with Spirit Vision is a Seer's act
+                act(player, 9, 0.25F); // observing with Spirit Vision is a Seer's act
             }
         } else if (d.spirituality() < d.maxSpirituality()) {
             d.setSpirituality(d.spirituality() + Pathway.regenPerSecond(d.sequence()));

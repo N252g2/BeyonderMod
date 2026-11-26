@@ -29,6 +29,8 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onFogColor);
         NeoForge.EVENT_BUS.addListener(GradingRenderer::onRenderStage);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onClientTick);
+        NeoForge.EVENT_BUS.addListener(AbilityKeys::onClientTick);
+        NeoForge.EVENT_BUS.addListener(TingenAmbience::onClientTick);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onComputeFov);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(SpiritRenderer::onRenderStage);
@@ -38,6 +40,8 @@ public class BeyonderClient {
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(SpiritVision.KEY);
+        event.register(AbilityKeys.USE);
+        event.register(AbilityKeys.NEXT);
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {

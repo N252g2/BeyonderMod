@@ -24,5 +24,19 @@
   "item.beyonder.magician_potion": "Magician Potion",
   "item.beyonder.spirit_pendulum": "Spirit Pendulum",
   "death.attack.beyonder.lost_control": "%1$s lost control and was consumed by their own spirit",
-  "death.attack.beyonder.lost_control.player": "%1$s lost control while fighting %2$s"
+  "death.attack.beyonder.lost_control.player": "%1$s lost control while fighting %2$s",
+  "block.beyonder.tingen_cobble_stairs": "Tingen Cobble Stairs",
+  "block.beyonder.tingen_cobble_slab": "Tingen Cobble Slab",
+  "block.beyonder.tingen_cobble_wall": "Tingen Cobble Wall",
+  "block.beyonder.soot_brick_stairs": "Soot-Stained Brick Stairs",
+  "block.beyonder.soot_brick_slab": "Soot-Stained Brick Slab",
+  "block.beyonder.soot_brick_wall": "Soot-Stained Brick Wall",
+  "block.beyonder.lit_window": "Lit Window",
+  "block.beyonder.chimney": "Chimney",
+  "key.beyonder.use_ability": "Use Ability",
+  "key.beyonder.next_ability": "Next Ability",
+  "beyonder.configuration.crimsonNights": "Crimson full-moon nights",
+  "beyonder.configuration.ambientParticles": "Drifting soot and ash",
+  "beyonder.configuration.churchBells": "Church bells",
+  "beyonder.configuration.lampGlow": "Lamp glow (Lite)"
 }

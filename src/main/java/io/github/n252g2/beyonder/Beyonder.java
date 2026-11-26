@@ -1,8 +1,10 @@
 package io.github.n252g2.beyonder;
 
 import com.mojang.logging.LogUtils;
+import io.github.n252g2.beyonder.block.ChimneyBlock;
 import io.github.n252g2.beyonder.block.GasLampBlock;
 import io.github.n252g2.beyonder.block.LampPostBlock;
+import io.github.n252g2.beyonder.core.Abilities;
 import io.github.n252g2.beyonder.core.BeyonderAttachments;
 import io.github.n252g2.beyonder.core.Pathway;
 import io.github.n252g2.beyonder.item.BeyonderPotionItem;
@@ -18,7 +20,10 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.material.MapColor;
@@ -79,10 +84,39 @@ public class Beyonder {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops());
 
+    // Stairs, slabs and walls for both street stones
+    public static final DeferredBlock<StairBlock> TINGEN_COBBLE_STAIRS = BLOCKS.registerBlock("tingen_cobble_stairs",
+            p -> new StairBlock(TINGEN_COBBLES.get().defaultBlockState(), p), stone(MapColor.STONE));
+    public static final DeferredBlock<SlabBlock> TINGEN_COBBLE_SLAB = BLOCKS.registerBlock("tingen_cobble_slab",
+            SlabBlock::new, stone(MapColor.STONE));
+    public static final DeferredBlock<WallBlock> TINGEN_COBBLE_WALL = BLOCKS.registerBlock("tingen_cobble_wall",
+            WallBlock::new, stone(MapColor.STONE).forceSolidOn());
+    public static final DeferredBlock<StairBlock> SOOT_BRICK_STAIRS = BLOCKS.registerBlock("soot_brick_stairs",
+            p -> new StairBlock(SOOT_BRICKS.get().defaultBlockState(), p), stone(MapColor.TERRACOTTA_BROWN));
+    public static final DeferredBlock<SlabBlock> SOOT_BRICK_SLAB = BLOCKS.registerBlock("soot_brick_slab",
+            SlabBlock::new, stone(MapColor.TERRACOTTA_BROWN));
+    public static final DeferredBlock<WallBlock> SOOT_BRICK_WALL = BLOCKS.registerBlock("soot_brick_wall",
+            WallBlock::new, stone(MapColor.TERRACOTTA_BROWN).forceSolidOn());
+
+    // A window with the lamps lit behind it, and a smoking chimney
+    public static final DeferredBlock<Block> LIT_WINDOW = BLOCKS.registerSimpleBlock("lit_window",
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(0.6F).sound(SoundType.GLASS)
+                    .lightLevel(state -> 11));
+    public static final DeferredBlock<ChimneyBlock> CHIMNEY = BLOCKS.registerBlock("chimney", ChimneyBlock::new,
+            stone(MapColor.TERRACOTTA_BROWN));
+
     public static final DeferredItem<BlockItem> GAS_LAMP_ITEM = ITEMS.registerSimpleBlockItem("gas_lamp", GAS_LAMP);
     public static final DeferredItem<BlockItem> LAMP_POST_ITEM = ITEMS.registerSimpleBlockItem("lamp_post", LAMP_POST);
     public static final DeferredItem<BlockItem> TINGEN_COBBLES_ITEM = ITEMS.registerSimpleBlockItem("tingen_cobbles", TINGEN_COBBLES);
     public static final DeferredItem<BlockItem> SOOT_BRICKS_ITEM = ITEMS.registerSimpleBlockItem("soot_bricks", SOOT_BRICKS);
+    public static final DeferredItem<BlockItem> TINGEN_COBBLE_STAIRS_ITEM = ITEMS.registerSimpleBlockItem("tingen_cobble_stairs", TINGEN_COBBLE_STAIRS);
+    public static final DeferredItem<BlockItem> TINGEN_COBBLE_SLAB_ITEM = ITEMS.registerSimpleBlockItem("tingen_cobble_slab", TINGEN_COBBLE_SLAB);
+    public static final DeferredItem<BlockItem> TINGEN_COBBLE_WALL_ITEM = ITEMS.registerSimpleBlockItem("tingen_cobble_wall", TINGEN_COBBLE_WALL);
+    public static final DeferredItem<BlockItem> SOOT_BRICK_STAIRS_ITEM = ITEMS.registerSimpleBlockItem("soot_brick_stairs", SOOT_BRICK_STAIRS);
+    public static final DeferredItem<BlockItem> SOOT_BRICK_SLAB_ITEM = ITEMS.registerSimpleBlockItem("soot_brick_slab", SOOT_BRICK_SLAB);
+    public static final DeferredItem<BlockItem> SOOT_BRICK_WALL_ITEM = ITEMS.registerSimpleBlockItem("soot_brick_wall", SOOT_BRICK_WALL);
+    public static final DeferredItem<BlockItem> LIT_WINDOW_ITEM = ITEMS.registerSimpleBlockItem("lit_window", LIT_WINDOW);
+    public static final DeferredItem<BlockItem> CHIMNEY_ITEM = ITEMS.registerSimpleBlockItem("chimney", CHIMNEY);
 
     // Seer pathway
     public static final DeferredItem<BeyonderPotionItem> SEER_POTION = ITEMS.registerItem("seer_potion",
@@ -103,12 +137,29 @@ public class Beyonder {
                 output.accept(LAMP_POST_ITEM.get());
                 output.accept(TINGEN_COBBLES_ITEM.get());
                 output.accept(SOOT_BRICKS_ITEM.get());
+                output.accept(TINGEN_COBBLE_STAIRS_ITEM.get());
+                output.accept(TINGEN_COBBLE_SLAB_ITEM.get());
+                output.accept(TINGEN_COBBLE_WALL_ITEM.get());
+                output.accept(SOOT_BRICK_STAIRS_ITEM.get());
+                output.accept(SOOT_BRICK_SLAB_ITEM.get());
+                output.accept(SOOT_BRICK_WALL_ITEM.get());
+                output.accept(LIT_WINDOW_ITEM.get());
+                output.accept(CHIMNEY_ITEM.get());
                 output.accept(SEER_POTION.get());
                 output.accept(CLOWN_POTION.get());
                 output.accept(MAGICIAN_POTION.get());
                 output.accept(PENDULUM.get());
             })
             .build());
+
+    private static BlockBehaviour.Properties stone(MapColor color) {
+        return BlockBehaviour.Properties.of()
+                .mapColor(color)
+                .instrument(NoteBlockInstrument.BASEDRUM)
+                .strength(2.0F, 6.0F)
+                .sound(SoundType.STONE)
+                .requiresCorrectToolForDrops();
+    }
 
     public Beyonder(IEventBus modBus, ModContainer container) {
         BLOCKS.register(modBus);
@@ -117,6 +168,7 @@ public class Beyonder {
         BeyonderAttachments.register(modBus);
         modBus.addListener(BeyonderNetwork::register);
         BeyonderServerEvents.register();
+        Abilities.registerEvents();
         LOGGER.info("Beyonder loaded. The fog settles over Tingen.");
     }
 

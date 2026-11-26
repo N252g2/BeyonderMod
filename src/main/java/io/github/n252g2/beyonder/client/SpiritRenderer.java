@@ -39,7 +39,7 @@ public final class SpiritRenderer {
 
     private static final double AURA_RANGE = 48.0;
     private static final double SENSE_THROUGH_WALLS = 28.0;
-    private static final float MARKER_HEIGHT = 7.0F;
+    private static final float MARKER_HEIGHT = 48.0F;
     /** Frames stacked vertically in aura.png and marker_beam.png (see tools/gen_textures.py). */
     private static final int AURA_FRAMES = 16;
     private static final int BEAM_FRAMES = 16;
@@ -185,7 +185,7 @@ public final class SpiritRenderer {
             if (marker.dimension() != mc.level.dimension()) {
                 continue;
             }
-            Vec3 at = marker.position().add(0.0, MARKER_HEIGHT * 0.45, 0.0);
+            Vec3 at = marker.position().add(0.0, 2.5, 0.0);
             double distance = at.distanceTo(cam);
             String text = marker.label() + "  " + Math.round(distance) + "m";
             float scale = 0.025F * (float) Math.max(1.0, distance * 0.09);

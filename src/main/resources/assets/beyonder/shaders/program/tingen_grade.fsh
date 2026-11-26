@@ -11,6 +11,9 @@ uniform float Strength;   // 0..1 color grade amount
 uniform float Night;      // 0 day .. 1 midnight
 uniform float Spirit;     // 0..1 Spirit Vision amount
 uniform float Clock;      // seconds, for slow animation
+uniform float Crimson;    // 0..1 crimson full-moon night
+uniform float Rain;       // 0..1 rain
+uniform float Glow;       // 1 = soft glow around lamps and flames
 
 in vec2 texCoord;
 in vec2 oneTexel;
@@ -74,11 +77,18 @@ vec3 grade(vec3 c, vec2 uv) {
     c = clamp(c, 0.0, 1.0);
     c = mix(c, c * c * (3.0 - 2.0 * c), 0.35);
 
+    // Rain: greyer, darker, wetter.
+    c = mix(c, vec3(luma(c)) * vec3(0.92, 0.96, 1.02), Rain * 0.35);
+    c *= 1.0 - 0.12 * Rain;
+
     // Night: deeper blues, slightly lifted blacks so shapes still read in the fog.
     c = mix(c, c * vec3(0.82, 0.88, 1.08) + vec3(0.010, 0.012, 0.022), Night * 0.8);
 
+    // Crimson full moon: everything takes on the moon's colour.
+    c = mix(c, c * vec3(1.30, 0.55, 0.55) + vec3(0.035, 0.0, 0.004), Crimson * 0.75);
+
     // Vignette.
-    c *= 1.0 - smoothstep(0.35, 1.05, aspectDistance(uv)) * mix(0.30, 0.45, Night);
+    c *= 1.0 - smoothstep(0.35, 1.05, aspectDistance(uv)) * mix(0.30, 0.45, max(Night, Crimson));
 
     // Fine film grain.
     c += (hash(uv * InSize + fract(Clock) * 37.0) - 0.5) * 0.025;
@@ -145,8 +155,24 @@ vec3 watercolor(vec2 uv) {
     return clamp(col, 0.0, 1.0);
 }
 
+// Soft halation around bright lights: gaslight blooms warmly into the fog.
+vec3 halation(vec2 uv) {
+    vec3 sum = vec3(0.0);
+    for (int i = 0; i < 12; i++) {
+        float a = float(i) * 0.5235988;
+        vec2 dir = vec2(cos(a), sin(a));
+        vec3 near = texture(DiffuseSampler, uv + dir * oneTexel * 5.0).rgb;
+        vec3 far = texture(DiffuseSampler, uv + dir * oneTexel * 12.0).rgb;
+        sum += max(near - 0.72, 0.0) * 0.6 + max(far - 0.72, 0.0) * 0.4;
+    }
+    return sum / 12.0 * vec3(1.0, 0.72, 0.45) * mix(1.4, 2.2, Night);
+}
+
 void main() {
     vec3 src = texture(DiffuseSampler, texCoord).rgb;
+    if (Glow > 0.5 && Strength > 0.001) {
+        src = min(src + halation(texCoord) * Strength, vec3(1.0));
+    }
     vec3 col = mix(src, grade(src, texCoord), Strength);
     if (Spirit > 0.001) {
         col = mix(col, watercolor(texCoord), Spirit);

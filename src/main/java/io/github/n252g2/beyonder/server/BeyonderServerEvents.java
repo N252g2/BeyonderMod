@@ -1,5 +1,6 @@
 package io.github.n252g2.beyonder.server;
 
+import io.github.n252g2.beyonder.core.Abilities;
 import io.github.n252g2.beyonder.core.Beyonders;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -36,6 +37,7 @@ public final class BeyonderServerEvents {
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         Beyonders.forget(event.getEntity());
+        Abilities.forget(event.getEntity());
     }
 
     private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {

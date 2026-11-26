@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "beyonder:block/soot_bricks",
+    "top": "beyonder:block/soot_bricks",
+    "side": "beyonder:block/soot_bricks"
+  }
+}

@@ -4,6 +4,13 @@
     "beyonder:gas_lamp",
     "beyonder:lamp_post",
     "beyonder:tingen_cobbles",
-    "beyonder:soot_bricks"
+    "beyonder:soot_bricks",
+    "beyonder:tingen_cobble_stairs",
+    "beyonder:tingen_cobble_slab",
+    "beyonder:tingen_cobble_wall",
+    "beyonder:soot_brick_stairs",
+    "beyonder:soot_brick_slab",
+    "beyonder:soot_brick_wall",
+    "beyonder:chimney"
   ]
 }

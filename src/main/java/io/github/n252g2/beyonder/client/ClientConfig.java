@@ -30,6 +30,22 @@ public final class ClientConfig {
             .comment("Tint the night sky and fog toward the red moon.")
             .define("nightTint", true);
 
+    public static final ModConfigSpec.BooleanValue CRIMSON_NIGHTS = BUILDER
+            .comment("Full-moon nights turn crimson: redder light and fog, spores in the air.")
+            .define("crimsonNights", true);
+
+    public static final ModConfigSpec.BooleanValue AMBIENT_PARTICLES = BUILDER
+            .comment("Drifting soot, ash and dust outdoors.")
+            .define("ambientParticles", true);
+
+    public static final ModConfigSpec.BooleanValue CHURCH_BELLS = BUILDER
+            .comment("Distant church bells at dawn, dusk and midnight.")
+            .define("churchBells", true);
+
+    public static final ModConfigSpec.BooleanValue LAMP_GLOW = BUILDER
+            .comment("Soft glow around bright lights (Lite; Beyonder Shaders has its own).")
+            .define("lampGlow", true);
+
     static {
         BUILDER.pop();
     }

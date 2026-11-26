@@ -8,6 +8,7 @@ uniform float sunAngle;
 uniform float frameTimeCounter;
 uniform float rainStrength;
 uniform float nightVision;
+uniform int moonPhase;
 #ifdef ENTITY
 uniform vec4 entityColor;
 #endif
@@ -52,7 +53,7 @@ void main() {
 
     // Tingen sun: soft and hazy. The moon: dim and red.
     vec3 sunColor = vec3(1.00, 0.90, 0.78) * 1.6;
-    vec3 moonColor = vec3(0.60, 0.14, 0.13) * 0.45;
+    vec3 moonColor = vec3(0.60, 0.14, 0.13) * (moonPhase == 0 ? 0.75 : 0.45); // brighter on crimson nights
     vec3 directColor = mix(moonColor, sunColor, day) * (1.0 - rainStrength * 0.7);
     vec3 ambientColor = mix(vec3(0.030, 0.034, 0.060), vec3(0.42, 0.47, 0.56), day) * (1.0 - rainStrength * 0.3);
 

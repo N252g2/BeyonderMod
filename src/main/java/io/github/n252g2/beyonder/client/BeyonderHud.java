@@ -1,5 +1,6 @@
 package io.github.n252g2.beyonder.client;
 
+import io.github.n252g2.beyonder.core.Ability;
 import io.github.n252g2.beyonder.core.Pathway;
 import io.github.n252g2.beyonder.net.BeyonderSyncPayload;
 import io.github.n252g2.beyonder.net.ClientInbox;
@@ -42,7 +43,8 @@ public final class BeyonderHud {
         int y = 6;
         int width = 128;
         boolean showLoss = self.lossOfControl() > 0.5F;
-        int height = showLoss ? 64 : 48;
+        Ability ability = AbilityKeys.current(mc.player);
+        int height = (showLoss ? 64 : 48) + (ability != null ? 14 : 0);
 
         // Panel with a brass rule along the top and bottom.
         g.fill(x, y, x + width, y + height, PANEL);
@@ -71,6 +73,18 @@ public final class BeyonderHud {
             }
             bar(g, font, x + 6, row, width - 12, "Loss of control", Mth.floor(self.lossOfControl()) + "%",
                     self.lossOfControl() / 100.0F, colour);
+        }
+        if (ability != null) {
+            row += 15;
+            float cooldown = AbilityKeys.cooldownLeft(mc, ability);
+            String keyName = AbilityKeys.USE.getTranslatedKeyMessage().getString();
+            g.drawString(font, "[" + keyName + "] " + ability.displayName(), x + 6, row, cooldown > 0 ? MUTED : GOLD, false);
+            String cost = Mth.floor(ability.cost()) + " sp";
+            g.drawString(font, cost, x + width - 6 - font.width(cost), row, MUTED, false);
+            if (cooldown > 0) {
+                int w = Mth.floor((width - 12) * cooldown);
+                g.fill(x + 6, row + 9, x + 6 + w, row + 10, MUTED);
+            }
         }
     }
 

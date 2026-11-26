@@ -25,6 +25,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -66,7 +67,7 @@ public class PendulumItem extends Item {
         sp.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
         String question = customName.getString().trim();
         divine(sp, data, question);
-        Beyonders.act(sp, 6.0F); // divining is a Seer's act
+        Beyonders.act(sp, 9, 6.0F); // divining is a Seer's act
         return InteractionResultHolder.consume(stack);
     }
 
@@ -98,15 +99,33 @@ public class PendulumItem extends Item {
         double distance = Math.sqrt(dx * dx + dz * dz);
         double angle = Math.atan2(dz, dx) + Math.toRadians((player.getRandom().nextFloat() * 2 - 1) * errorDegrees);
 
-        // Near answers are marked where they are; far ones as a signpost along the way.
+        // Near answers are marked above where they are; far ones as a signpost along the way.
+        // Markers always stand on the surface so the beam is visible; the message says how deep the answer is.
         double markDistance = distance < 160 ? distance : 64;
         double mx = from.x + Math.cos(angle) * markDistance;
         double mz = from.z + Math.sin(angle) * markDistance;
-        double my = distance < 160 ? target.y : from.y;
-        PacketDistributor.sendToPlayer(player, new SpiritMarkerPayload(mx, my, mz, question, 0xFFC860));
+        double surface = surfaceY(level, mx, mz, from.y);
+        PacketDistributor.sendToPlayer(player, new SpiritMarkerPayload(mx, surface, mz, question, 0xFFC860));
 
+        String depth = "";
+        if (distance < 160) {
+            int below = (int) Math.round(surfaceY(level, target.x, target.z, target.y) - target.y);
+            if (below > 4) {
+                depth = " It lies " + below + " blocks below the surface.";
+            }
+        }
         player.displayClientMessage(Component.literal("The pendulum swings " + compass(angle) + ". The answer lies "
-                + howFar(distance) + ". Open your Spirit Vision to follow it.").withStyle(ChatFormatting.GOLD), true);
+                + howFar(distance) + "." + depth + " Open your Spirit Vision to follow it.").withStyle(ChatFormatting.GOLD), false);
+    }
+
+    /** The surface height at a spot, if that chunk is loaded; otherwise the fallback. */
+    private static double surfaceY(ServerLevel level, double x, double z, double fallback) {
+        int bx = Mth.floor(x);
+        int bz = Mth.floor(z);
+        if (!level.hasChunk(bx >> 4, bz >> 4)) {
+            return fallback;
+        }
+        return level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, bx, bz);
     }
 
     private static Vec3 find(ServerPlayer player, ServerLevel level, String q) {

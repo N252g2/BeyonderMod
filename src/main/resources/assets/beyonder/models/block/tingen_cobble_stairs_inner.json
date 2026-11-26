@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "beyonder:block/tingen_cobbles",
+    "top": "beyonder:block/tingen_cobbles",
+    "side": "beyonder:block/tingen_cobbles"
+  }
+}

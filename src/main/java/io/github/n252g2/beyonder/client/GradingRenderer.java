@@ -112,6 +112,9 @@ public final class GradingRenderer {
         postChain.setUniform("Night", night);
         postChain.setUniform("Spirit", spirit);
         postChain.setUniform("Clock", clock);
+        postChain.setUniform("Crimson", overworld ? TingenAtmosphere.crimsonFactor(mc.level, partial) : 0.0F);
+        postChain.setUniform("Rain", mc.level.getRainLevel(partial));
+        postChain.setUniform("Glow", ClientConfig.bool(ClientConfig.LAMP_GLOW, true) ? 1.0F : 0.0F);
         postChain.process(event.getPartialTick().getGameTimeDeltaTicks());
         main.bindWrite(false);
     }

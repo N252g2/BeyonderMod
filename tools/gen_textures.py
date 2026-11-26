@@ -291,6 +291,55 @@ def pendulum():
     save(img, ITEM, "spirit_pendulum.png")
 
 
+def sun():
+    """A round, smog-hazed sun (vanilla's is square). Drawn additively, so black is transparent."""
+    size = 32
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 255))
+    px = img.load()
+    for y in range(size):
+        for x in range(size):
+            d = math.hypot(x - 15.5, y - 15.5)
+            core = max(0.0, min(1.0, 7.0 - d))           # crisp round disc
+            halo = math.exp(-(d / 7.5) ** 2) * 0.55      # haze around it
+            hazy = halo * (1 - core)
+            r = 255 * core + 255 * hazy
+            g = 236 * core + 214 * hazy
+            b = 200 * core + 160 * hazy
+            px[x, y] = (clamp(r), clamp(g), clamp(b), 255)
+    save(img, ENV, "sun.png")
+
+
+def lit_window():
+    """A sash window with warm lamplight behind it."""
+    rnd = random.Random(5)
+    img = Image.new("RGBA", (16, 16))
+    px = img.load()
+    frame, dark = (52, 38, 30), (34, 25, 20)
+    for y in range(16):
+        for x in range(16):
+            on_frame = x in (0, 15) or y in (0, 15) or x in (7, 8) or y == 7
+            if on_frame:
+                px[x, y] = (dark if x in (0, 15) or y in (0, 15) else frame) + (255,)
+                continue
+            # lamplight: brighter low and centre, a curtain edge on the left pane
+            glow = 0.75 + 0.25 * (y / 15) - 0.15 * abs(x - 7.5) / 7.5 + (rnd.random() - 0.5) * 0.06
+            c = (255 * glow, 190 * glow, 95 * glow)
+            if x in (1, 2) and y < 7:
+                c = (150 * glow, 70 * glow, 50 * glow)  # curtain
+            px[x, y] = tuple(clamp(v) for v in c) + (255,)
+    save(img, BLOCK, "lit_window.png")
+
+
+def chimney_top():
+    img = Image.new("RGBA", (16, 16))
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            rim = x < 3 or x > 12 or y < 3 or y > 12
+            px[x, y] = ((96, 54, 44, 255) if rim else (20, 16, 16, 255))
+    save(img, BLOCK, "chimney_top.png")
+
+
 if __name__ == "__main__":
     cobbles()
     soot_bricks()
@@ -304,4 +353,7 @@ if __name__ == "__main__":
     potion("clown_potion.png", (190, 40, 55), (255, 170, 120))
     potion("magician_potion.png", (40, 130, 150), (150, 240, 230))
     pendulum()
+    sun()
+    lit_window()
+    chimney_top()
     print("textures written")

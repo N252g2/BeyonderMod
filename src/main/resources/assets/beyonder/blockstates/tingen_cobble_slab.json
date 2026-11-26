@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "beyonder:block/tingen_cobble_slab"
+    },
+    "type=top": {
+      "model": "beyonder:block/tingen_cobble_slab_top"
+    },
+    "type=double": {
+      "model": "beyonder:block/tingen_cobbles"
+    }
+  }
+}

@@ -26,6 +26,17 @@ public final class TingenAtmosphere {
         return Mth.clamp((0.25F - sunHeight) / 0.55F, 0.0F, 1.0F);
     }
 
+    /** Full-moon nights in the Overworld: the red moon turns fully crimson. */
+    public static boolean isCrimsonNight(ClientLevel level) {
+        return level.dimension() == Level.OVERWORLD && level.getMoonPhase() == 0
+                && ClientConfig.bool(ClientConfig.CRIMSON_NIGHTS, true);
+    }
+
+    /** 0..1 strength of the crimson tint right now. */
+    public static float crimsonFactor(ClientLevel level, float partialTick) {
+        return isCrimsonNight(level) ? nightFactor(level, partialTick) : 0.0F;
+    }
+
     private static boolean appliesTo(Camera camera) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.level.dimension() != Level.OVERWORLD) {
@@ -62,6 +73,9 @@ public final class TingenAtmosphere {
 
         // Day: a soft industrial haze. Night: the streets close in.
         float targetFar = Mth.lerp(night, 150.0F, 54.0F);
+        if (isCrimsonNight(mc.level)) {
+            targetFar *= Mth.lerp(night, 1.0F, 0.8F); // the red haze closes in
+        }
         targetFar = Mth.lerp(rain * 0.5F, targetFar, targetFar * 0.7F);
         targetFar = Math.min(far, targetFar);
         float targetNear = targetFar * Mth.lerp(night, 0.30F, 0.02F);
@@ -95,6 +109,12 @@ public final class TingenAtmosphere {
         r = Mth.lerp(night * 0.85F, r, 0.120F);
         g = Mth.lerp(night * 0.85F, g, 0.085F);
         b = Mth.lerp(night * 0.85F, b, 0.115F);
+
+        // Crimson nights: the fog itself turns the colour of old blood.
+        float crimson = crimsonFactor(mc.level, (float) event.getPartialTick()) * 0.7F;
+        r = Mth.lerp(crimson, r, 0.26F);
+        g = Mth.lerp(crimson, g, 0.05F);
+        b = Mth.lerp(crimson, b, 0.06F);
 
         event.setRed(r);
         event.setGreen(g);

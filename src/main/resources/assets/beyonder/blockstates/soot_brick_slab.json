@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "beyonder:block/soot_brick_slab"
+    },
+    "type=top": {
+      "model": "beyonder:block/soot_brick_slab_top"
+    },
+    "type=double": {
+      "model": "beyonder:block/soot_bricks"
+    }
+  }
+}

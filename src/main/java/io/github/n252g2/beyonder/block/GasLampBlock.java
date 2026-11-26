@@ -35,5 +35,12 @@ public class GasLampBlock extends Block {
             double z = pos.getZ() + 0.5 + (random.nextDouble() - 0.5) * 0.08;
             level.addParticle(ParticleTypes.SMALL_FLAME, x, y, z, 0.0, 0.004, 0.0);
         }
+        // Moths at night, drawn to the light.
+        if (level.isNight() && random.nextInt(6) == 0) {
+            double a = random.nextDouble() * Math.PI * 2;
+            double r = 0.45 + random.nextDouble() * 0.35;
+            level.addParticle(ParticleTypes.WHITE_ASH, pos.getX() + 0.5 + Math.cos(a) * r,
+                    pos.getY() + 0.4 + random.nextDouble() * 0.6, pos.getZ() + 0.5 + Math.sin(a) * r, 0.0, 0.0, 0.0);
+        }
     }
 }

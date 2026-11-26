@@ -11,6 +11,7 @@ uniform float viewWidth;
 uniform float viewHeight;
 uniform float sunAngle;
 uniform float rainStrength;
+uniform int moonPhase;
 
 varying vec2 texcoord;
 varying vec4 glcolor;
@@ -36,7 +37,7 @@ void main() {
     float day = dayFactor(sunAngle);
     vec3 dayHorizon = toLinear(fogColor);
     vec3 dayZenith = toLinear(mix(skyColor, vec3(luma(skyColor)), 0.35)) * 0.85;
-    vec3 nightHorizon = vec3(0.050, 0.016, 0.020);
+    vec3 nightHorizon = moonPhase == 0 ? vec3(0.110, 0.012, 0.016) : vec3(0.050, 0.016, 0.020);
     vec3 nightZenith = vec3(0.003, 0.004, 0.010);
 
     vec3 horizon = mix(nightHorizon, dayHorizon, day);
