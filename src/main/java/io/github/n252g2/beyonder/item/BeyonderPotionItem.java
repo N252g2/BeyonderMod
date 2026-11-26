@@ -48,6 +48,7 @@ public class BeyonderPotionItem extends Item {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         if (!level.isClientSide && entity instanceof ServerPlayer player) {
             Beyonders.drinkPotion(player, pathway, sequence);
+            player.getCooldowns().addCooldown(this, 200);
         }
         if (entity instanceof Player player && !player.getAbilities().instabuild) {
             stack.shrink(1);

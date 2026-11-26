@@ -30,6 +30,9 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(GradingRenderer::onRenderStage);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onClientTick);
         NeoForge.EVENT_BUS.addListener(AbilityKeys::onClientTick);
+        NeoForge.EVENT_BUS.addListener(PotionVision::onClientTick);
+        NeoForge.EVENT_BUS.addListener(PotionVision::onCameraAngles);
+        NeoForge.EVENT_BUS.addListener(PotionVision::onComputeFov);
         NeoForge.EVENT_BUS.addListener(TingenAmbience::onClientTick);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onComputeFov);
         NeoForge.EVENT_BUS.addListener(SpiritVision::onLoggingOut);

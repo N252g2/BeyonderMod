@@ -111,6 +111,38 @@
             "values": [
                 0.0
             ]
+        },
+        {
+            "name": "Ascend",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Flash",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Chill",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
+        },
+        {
+            "name": "Dark",
+            "type": "float",
+            "count": 1,
+            "values": [
+                0.0
+            ]
         }
     ]
 }

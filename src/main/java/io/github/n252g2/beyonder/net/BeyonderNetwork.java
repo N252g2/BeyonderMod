@@ -17,6 +17,8 @@ public final class BeyonderNetwork {
                 (payload, context) -> ClientInbox.accept(payload));
         registrar.playToClient(SpiritMarkerPayload.TYPE, SpiritMarkerPayload.STREAM_CODEC,
                 (payload, context) -> ClientInbox.accept(payload));
+        registrar.playToClient(PotionVisionPayload.TYPE, PotionVisionPayload.STREAM_CODEC,
+                (payload, context) -> ClientInbox.accept(payload));
         registrar.playToServer(SpiritVisionPayload.TYPE, SpiritVisionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) {

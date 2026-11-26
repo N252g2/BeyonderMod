@@ -14,6 +14,10 @@ uniform float Clock;      // seconds, for slow animation
 uniform float Crimson;    // 0..1 crimson full-moon night
 uniform float Rain;       // 0..1 rain
 uniform float Glow;       // 1 = soft glow around lamps and flames
+uniform float Ascend;     // 0..1 potion vision: how warped the world is
+uniform float Flash;      // 0..1 the flash at the vision's climax
+uniform float Chill;      // 0..1 the icy first moments of a potion
+uniform float Dark;       // 1 when the vision is going wrong
 
 in vec2 texCoord;
 in vec2 oneTexel;
@@ -168,8 +172,33 @@ vec3 halation(vec2 uv) {
     return sum / 12.0 * vec3(1.0, 0.72, 0.45) * mix(1.4, 2.2, Night);
 }
 
+// The potion vision: the world swirls around the centre of sight, ripples, and splits into colours.
+vec2 warp(vec2 uv) {
+    vec2 d = uv - 0.5;
+    d.x *= InSize.x / InSize.y;
+    float r = length(d);
+    float swirl = Ascend * 1.1 * (1.0 - smoothstep(0.0, 0.75, r)) * sin(Clock * 0.9);
+    float s = sin(swirl);
+    float c = cos(swirl);
+    d = vec2(d.x * c - d.y * s, d.x * s + d.y * c);
+    d *= 1.0 + sin(r * 38.0 - Clock * 7.0) * 0.012 * Ascend; // ripples
+    d.x /= InSize.x / InSize.y;
+    return 0.5 + d;
+}
+
+vec3 sampleWarped(vec2 uv) {
+    if (Ascend <= 0.001) {
+        return texture(DiffuseSampler, uv).rgb;
+    }
+    vec2 dir = (uv - 0.5) * 0.018 * Ascend;
+    vec2 wuv = warp(uv);
+    return vec3(texture(DiffuseSampler, wuv + dir).r,
+                texture(DiffuseSampler, wuv).g,
+                texture(DiffuseSampler, wuv - dir).b);
+}
+
 void main() {
-    vec3 src = texture(DiffuseSampler, texCoord).rgb;
+    vec3 src = sampleWarped(texCoord);
     if (Glow > 0.5 && Strength > 0.001) {
         src = min(src + halation(texCoord) * Strength, vec3(1.0));
     }
@@ -177,5 +206,20 @@ void main() {
     if (Spirit > 0.001) {
         col = mix(col, watercolor(texCoord), Spirit);
     }
-    fragColor = vec4(col, 1.0);
+
+    if (Ascend > 0.001 || Flash > 0.001 || Chill > 0.001) {
+        float l = luma(col);
+        // Ice in the veins: a cold, pale wash.
+        col = mix(col, vec3(l) * vec3(0.78, 0.90, 1.12) + vec3(0.02, 0.04, 0.07), Chill * 0.55);
+        // The ordeal: colour drains toward a dreamlike blue-grey (or blood red when it goes wrong).
+        vec3 dream = Dark > 0.5 ? vec3(l) * vec3(1.35, 0.35, 0.35) : vec3(l) * vec3(0.85, 0.92, 1.05);
+        col = mix(col, dream, Ascend * 0.55);
+        // The world closes in.
+        float vig = smoothstep(0.15, 0.95, aspectDistance(texCoord));
+        col *= 1.0 - vig * Ascend * (Dark > 0.5 ? 0.95 : 0.75);
+        // Climax: blinding light, or red darkness.
+        vec3 flashColour = Dark > 0.5 ? vec3(0.35, 0.0, 0.02) : vec3(1.0, 0.97, 0.90);
+        col = mix(col, flashColour, Flash);
+    }
+    fragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }

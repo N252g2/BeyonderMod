@@ -32,6 +32,15 @@ Visual settings are in *Mods > Beyonder > Config* or `config/beyonder-client.tom
 - Test commands (ops): `/beyonder set <player> seer [sequence]`, `/beyonder digestion <player> <percent>`,
   `/beyonder spirituality <player> <amount>`, `/beyonder calm <player>`; anyone: `/beyonder status`.
 
+## Ability wheel, potion visions and buildings (0.5.0)
+
+- **Ability wheel**: hold **G**, point at a power (or Spirit Vision), let go. **R** uses the chosen power.
+- **Potion visions**: drinking plays a vision: an icy chill, the world swirling and splitting, a racing
+  heart and whispers, then a flash at the climax when the outcome lands (red darkness if it goes wrong).
+- **Buildings** (ops): `/beyonder build <terrace_house | terrace_house_b | corner_shop | street | chapel | tingen_street>`
+  places a building two blocks ahead, front facing you. Designs live in `tools/gen_structures.py`
+  (`python3 tools/gen_structures.py --preview out/` renders previews).
+
 ## Beyonder Shaders
 
 `shaderpack/` is our own Iris shader pack (Standard edition): soft shadows, hazy sun, red moonlight, flickering

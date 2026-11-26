@@ -29,6 +29,7 @@ public final class BeyonderHud {
 
     public static void render(GuiGraphics g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
+        PotionVision.renderOverlay(g, delta);
         if (mc.player == null || mc.options.hideGui || mc.getDebugOverlay().showDebugScreen()) {
             return;
         }

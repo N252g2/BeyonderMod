@@ -55,7 +55,7 @@ public final class SpiritRenderer {
             return;
         }
         float partial = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        float vision = SpiritVision.amount(partial);
+        float vision = Math.max(SpiritVision.amount(partial), PotionVision.glimpse(partial) * 0.8F);
         if (vision <= 0.01F) {
             return;
         }

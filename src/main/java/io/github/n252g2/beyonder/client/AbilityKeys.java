@@ -5,6 +5,7 @@ import io.github.n252g2.beyonder.core.Ability;
 import io.github.n252g2.beyonder.net.BeyonderSyncPayload;
 import io.github.n252g2.beyonder.net.ClientInbox;
 import io.github.n252g2.beyonder.net.UseAbilityPayload;
+import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
@@ -15,14 +16,14 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
-/** G picks the next ability, R uses it. The server decides whether it works. */
+/** Hold G for the ability wheel; R uses the chosen ability. The server decides whether it works. */
 public final class AbilityKeys {
     public static final KeyMapping USE = new KeyMapping(
             "key.beyonder.use_ability", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, "key.categories.beyonder");
     public static final KeyMapping NEXT = new KeyMapping(
             "key.beyonder.next_ability", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.beyonder");
 
-    private static int selected;
+    private static Ability selected;
     private static long readyAt; // client-side guess of the cooldown, for the HUD
 
     private AbilityKeys() {}
@@ -41,7 +42,34 @@ public final class AbilityKeys {
         if (list.isEmpty()) {
             return null;
         }
-        return list.get(Math.floorMod(selected, list.size()));
+        return selected != null && list.contains(selected) ? selected : list.get(0);
+    }
+
+    /** The wheel's slots: Spirit Vision for Seers, then every ability you can use. */
+    static List<AbilityWheelScreen.WheelEntry> wheelEntries(Player player) {
+        List<AbilityWheelScreen.WheelEntry> entries = new ArrayList<>();
+        BeyonderSyncPayload self = ClientInbox.get(player.getId());
+        if (player.isCreative() || (self != null && "seer".equals(self.pathway()))) {
+            entries.add(new AbilityWheelScreen.WheelEntry("Spirit Vision",
+                    SpiritVision.isActive() ? "close" : "open", null, true));
+        }
+        for (Ability a : available(player)) {
+            entries.add(new AbilityWheelScreen.WheelEntry(a.displayName(), Math.round(a.cost()) + " Spirituality", a, false));
+        }
+        return entries;
+    }
+
+    static void choose(AbilityWheelScreen.WheelEntry entry) {
+        Minecraft mc = Minecraft.getInstance();
+        if (entry.spiritVision()) {
+            SpiritVision.toggle(mc);
+            return;
+        }
+        selected = entry.ability();
+        if (mc.player != null) {
+            mc.player.displayClientMessage(Component.literal(entry.name() + " ready. Press "
+                    + USE.getTranslatedKeyMessage().getString() + " to use it.").withStyle(ChatFormatting.GOLD), true);
+        }
     }
 
     /** 0 when ready, else the fraction of the cooldown left. */
@@ -57,16 +85,15 @@ public final class AbilityKeys {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         while (NEXT.consumeClick()) {
-            if (player == null) {
+            if (player == null || mc.screen != null) {
                 continue;
             }
-            List<Ability> list = available(player);
-            if (list.isEmpty()) {
-                player.displayClientMessage(Component.literal("You have no abilities to select yet.").withStyle(ChatFormatting.GRAY), true);
+            List<AbilityWheelScreen.WheelEntry> entries = wheelEntries(player);
+            if (entries.isEmpty()) {
+                player.displayClientMessage(Component.literal("You have no powers yet. Drink a Seer Potion.").withStyle(ChatFormatting.GRAY), true);
                 continue;
             }
-            selected = Math.floorMod(selected + 1, list.size());
-            player.displayClientMessage(Component.literal("Ability: " + current(player).displayName()).withStyle(ChatFormatting.GOLD), true);
+            mc.setScreen(new AbilityWheelScreen(entries));
         }
         while (USE.consumeClick()) {
             if (player == null || mc.level == null) {

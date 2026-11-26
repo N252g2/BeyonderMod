@@ -24,6 +24,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
  * /beyonder digestion <players> <0-100>           ops
  * /beyonder spirituality <players> <amount>       ops
  * /beyonder calm <players>                        ops: clear loss of control
+ * /beyonder build <building>                      ops: place a Tingen building facing you
  */
 public final class BeyonderCommands {
     private BeyonderCommands() {}
@@ -31,6 +32,7 @@ public final class BeyonderCommands {
     static void register(RegisterCommandsEvent event) {
         CommandDispatcher<CommandSourceStack> d = event.getDispatcher();
         d.register(Commands.literal("beyonder")
+                .then(BuildCommand.node())
                 .then(Commands.literal("status")
                         .executes(ctx -> status(ctx.getSource(), ctx.getSource().getPlayerOrException()))
                         .then(Commands.argument("player", EntityArgument.player()).requires(s -> s.hasPermission(2))

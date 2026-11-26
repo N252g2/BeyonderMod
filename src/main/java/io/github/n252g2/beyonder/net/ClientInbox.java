@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public final class ClientInbox {
     private static final Map<Integer, BeyonderSyncPayload> BEYONDERS = new ConcurrentHashMap<>();
     private static final Queue<SpiritMarkerPayload> MARKERS = new ConcurrentLinkedQueue<>();
+    private static final Queue<PotionVisionPayload> VISIONS = new ConcurrentLinkedQueue<>();
 
     private ClientInbox() {}
 
@@ -21,6 +22,14 @@ public final class ClientInbox {
 
     public static void accept(SpiritMarkerPayload payload) {
         MARKERS.add(payload);
+    }
+
+    public static void accept(PotionVisionPayload payload) {
+        VISIONS.add(payload);
+    }
+
+    public static PotionVisionPayload pollVision() {
+        return VISIONS.poll();
     }
 
     /** The last known state of an entity, or null if it is not a known Beyonder. */
@@ -35,5 +44,6 @@ public final class ClientInbox {
     public static void clear() {
         BEYONDERS.clear();
         MARKERS.clear();
+        VISIONS.clear();
     }
 }

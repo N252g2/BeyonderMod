@@ -93,7 +93,7 @@ public final class SpiritVision {
         return self != null && "seer".equals(self.pathway()) && self.spirituality() >= 2.0F;
     }
 
-    private static void toggle(Minecraft mc) {
+    static void toggle(Minecraft mc) {
         Player player = mc.player;
         if (player == null || mc.level == null) {
             return;

@@ -2,6 +2,10 @@ package io.github.n252g2.beyonder.core;
 
 import io.github.n252g2.beyonder.Beyonder;
 import io.github.n252g2.beyonder.net.BeyonderSyncPayload;
+import io.github.n252g2.beyonder.net.PotionVisionPayload;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +36,9 @@ public final class Beyonders {
             ResourceKey.create(Registries.DAMAGE_TYPE, Beyonder.id("lost_control"));
 
     private static final Set<UUID> SPIRIT_VISION = ConcurrentHashMap.newKeySet();
+    private static final Map<UUID, List<Pending>> PENDING = new ConcurrentHashMap<>();
+
+    private record Pending(long at, Runnable action) {}
 
     private Beyonders() {}
 
@@ -161,54 +168,122 @@ public final class Beyonders {
 
     // ---------------------------------------------------------------- potions
 
+    /**
+     * Drinking a potion starts a vision (played on the client). The outcome is decided now but lands at
+     * the vision's climax, so the flash and the result arrive together.
+     */
     public static void drinkPotion(ServerPlayer player, Pathway pathway, int sequence) {
+        if (PENDING.containsKey(player.getUUID())) {
+            return; // already in a vision
+        }
         BeyonderData d = get(player);
         String name = pathway.sequenceName(sequence);
 
-        if (!d.isBeyonder()) {
-            if (sequence == 9) {
-                d.become(pathway, 9);
-                d.setSpirituality(d.maxSpirituality() * 0.5F);
-                awaken(player, "The world tilts. Voices fade. You are a Beyonder: " + name + ", Sequence 9.");
-            } else {
-                warn(player, "A mortal body cannot hold a Sequence " + sequence + " potion.");
-                addLossOfControl(player, 100.0F);
-            }
-            return;
-        }
-        if (d.pathway() != pathway) {
-            warn(player, "Two pathways war inside you.");
-            addLossOfControl(player, 100.0F);
-            return;
-        }
-        if (sequence >= d.sequence()) {
+        if (d.isBeyonder() && d.pathway() == pathway && sequence >= d.sequence()) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
             player.displayClientMessage(Component.literal("You have already passed this Sequence. The potion only sickens you.")
                     .withStyle(ChatFormatting.GRAY), false);
             return;
         }
-        if (sequence < d.sequence() - 1) {
-            warn(player, "You tried to skip a Sequence. Your spirit cannot bear it.");
-            addLossOfControl(player, 100.0F);
-            return;
+
+        int kind;
+        Runnable outcome;
+        if (!d.isBeyonder()) {
+            if (sequence == 9) {
+                kind = PotionVisionPayload.AWAKEN;
+                outcome = () -> {
+                    BeyonderData now = get(player);
+                    now.become(pathway, 9);
+                    now.setSpirituality(now.maxSpirituality() * 0.5F);
+                    awaken(player, "The world settles. Voices fade. You are a Beyonder: " + name + ", Sequence 9.");
+                };
+            } else {
+                kind = PotionVisionPayload.FATAL;
+                outcome = () -> {
+                    warn(player, "A mortal body cannot hold a Sequence " + sequence + " potion.");
+                    addLossOfControl(player, 100.0F);
+                };
+            }
+        } else if (d.pathway() != pathway) {
+            kind = PotionVisionPayload.FATAL;
+            outcome = () -> {
+                warn(player, "Two pathways war inside you.");
+                addLossOfControl(player, 100.0F);
+            };
+        } else if (sequence < d.sequence() - 1) {
+            kind = PotionVisionPayload.FATAL;
+            outcome = () -> {
+                warn(player, "You tried to skip a Sequence. Your spirit cannot bear it.");
+                addLossOfControl(player, 100.0F);
+            };
+        } else {
+            // The next Sequence: safe when fully digested, a gamble otherwise.
+            float undigested = 1.0F - d.digestion() / 100.0F;
+            if (undigested > 0.0F && player.getRandom().nextFloat() < undigested * 0.9F) {
+                float loss = 50.0F + undigested * 60.0F;
+                kind = d.lossOfControl() + loss >= 100.0F ? PotionVisionPayload.FATAL : PotionVisionPayload.FAILURE;
+                outcome = () -> {
+                    warn(player, "The potion was taken too soon. Something in you begins to slip.");
+                    addLossOfControl(player, loss);
+                };
+            } else {
+                kind = PotionVisionPayload.ADVANCE;
+                outcome = () -> {
+                    BeyonderData now = get(player);
+                    now.become(pathway, sequence);
+                    now.setSpirituality(now.maxSpirituality());
+                    now.setLossOfControl(now.lossOfControl() + undigested * 40.0F);
+                    awaken(player, "You advance. You are now " + name + ", Sequence " + sequence + ".");
+                };
+            }
         }
 
-        // The next Sequence: safe when fully digested, a gamble otherwise.
-        float undigested = 1.0F - d.digestion() / 100.0F;
-        if (undigested > 0.0F && player.getRandom().nextFloat() < undigested * 0.9F) {
-            warn(player, "The potion was taken too soon. Something in you begins to slip.");
-            addLossOfControl(player, 50.0F + undigested * 60.0F);
+        // The ordeal: the body seizes while the vision plays.
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, PotionVisionPayload.CLIMAX_TICKS + 20, 3, false, false));
+        player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, PotionVisionPayload.LENGTH_TICKS, 1, false, false));
+        player.serverLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.GENERIC_DRINK, SoundSource.PLAYERS, 1.0F, 0.7F);
+        PacketDistributor.sendToPlayer(player, new PotionVisionPayload(kind));
+        later(player, PotionVisionPayload.CLIMAX_TICKS, outcome);
+    }
+
+    // ---------------------------------------------------------------- delayed actions
+
+    public static void later(ServerPlayer player, int ticks, Runnable action) {
+        PENDING.computeIfAbsent(player.getUUID(), k -> new ArrayList<>())
+                .add(new Pending(player.level().getGameTime() + ticks, action));
+    }
+
+    /** Called every tick for each player: runs actions that are due. */
+    public static void tickPending(ServerPlayer player) {
+        List<Pending> list = PENDING.get(player.getUUID());
+        if (list == null) {
             return;
         }
-        d.become(pathway, sequence);
-        d.setSpirituality(d.maxSpirituality());
-        d.setLossOfControl(d.lossOfControl() + undigested * 40.0F);
-        awaken(player, "You advance. You are now " + name + ", Sequence " + sequence + ".");
+        long now = player.level().getGameTime();
+        List<Pending> due = new ArrayList<>();
+        list.removeIf(p -> {
+            if (p.at() <= now) {
+                due.add(p);
+                return true;
+            }
+            return false;
+        });
+        if (list.isEmpty()) {
+            PENDING.remove(player.getUUID());
+        }
+        due.forEach(p -> p.action().run());
+    }
+
+    /** On logout, finish anything pending so a potion is never lost. */
+    public static void flushPending(ServerPlayer player) {
+        List<Pending> list = PENDING.remove(player.getUUID());
+        if (list != null) {
+            list.forEach(p -> p.action().run());
+        }
     }
 
     private static void awaken(ServerPlayer player, String message) {
-        player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 120, 0));
-        player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 60, 0));
         player.playNotifySound(SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 1.0F, 0.6F);
         player.displayClientMessage(Component.literal(message).withStyle(ChatFormatting.GOLD), false);
         BeyonderData d = get(player);

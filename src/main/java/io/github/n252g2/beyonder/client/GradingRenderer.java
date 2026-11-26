@@ -90,7 +90,9 @@ public final class GradingRenderer {
         float strength = ClientConfig.bool(ClientConfig.COLOR_GRADING, true) && overworld && !irisShadersActive()
                 ? ClientConfig.number(ClientConfig.GRADING_STRENGTH, 1.0F)
                 : 0.0F;
-        if (strength <= 0.0F && spirit <= 0.001F) {
+        float ascend = PotionVision.intensity(partial);
+        float flash = PotionVision.flash(partial);
+        if (strength <= 0.0F && spirit <= 0.001F && ascend <= 0.0F && flash <= 0.0F) {
             return;
         }
 
@@ -114,6 +116,10 @@ public final class GradingRenderer {
         postChain.setUniform("Clock", clock);
         postChain.setUniform("Crimson", overworld ? TingenAtmosphere.crimsonFactor(mc.level, partial) : 0.0F);
         postChain.setUniform("Rain", mc.level.getRainLevel(partial));
+        postChain.setUniform("Ascend", ascend);
+        postChain.setUniform("Flash", flash);
+        postChain.setUniform("Chill", PotionVision.chill(partial));
+        postChain.setUniform("Dark", PotionVision.darkness());
         postChain.setUniform("Glow", ClientConfig.bool(ClientConfig.LAMP_GLOW, true) ? 1.0F : 0.0F);
         postChain.process(event.getPartialTick().getGameTimeDeltaTicks());
         main.bindWrite(false);

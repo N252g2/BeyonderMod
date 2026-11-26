@@ -24,8 +24,11 @@ public final class BeyonderServerEvents {
     }
 
     private static void onTick(PlayerTickEvent.Post event) {
-        if (event.getEntity() instanceof ServerPlayer player && player.tickCount % 20 == 0) {
-            Beyonders.secondTick(player);
+        if (event.getEntity() instanceof ServerPlayer player) {
+            Beyonders.tickPending(player);
+            if (player.tickCount % 20 == 0) {
+                Beyonders.secondTick(player);
+            }
         }
     }
 
@@ -36,6 +39,9 @@ public final class BeyonderServerEvents {
     }
 
     private static void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            Beyonders.flushPending(player);
+        }
         Beyonders.forget(event.getEntity());
         Abilities.forget(event.getEntity());
     }
