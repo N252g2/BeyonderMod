@@ -11,6 +11,11 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import io.github.n252g2.beyonder.net.BeyonderSyncPayload;
+import io.github.n252g2.beyonder.net.ClientInbox;
+import io.github.n252g2.beyonder.net.SpiritVisionPayload;
+import net.minecraft.ChatFormatting;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
@@ -22,8 +27,8 @@ import org.lwjgl.glfw.GLFW;
  * and reveals the auras of living things around you (drawn by {@link SpiritRenderer}),
  * along with waypoint markers ({@link SpiritMarkers}).
  *
- * <p>For now it is open to everyone for testing; it will be gated behind the Seer pathway
- * and cost Spirituality once those systems exist.</p>
+ * <p>Only a Seer can open it (or anyone in creative), and it drains Spirituality while open. The server
+ * keeps the books and closes it when Spirituality runs out.</p>
  */
 public final class SpiritVision {
     public static final KeyMapping KEY = new KeyMapping(
@@ -33,6 +38,7 @@ public final class SpiritVision {
     private static final double AURA_RANGE = 24.0;
 
     private static boolean active;
+    private static int toggleGrace; // ticks to ignore stale server state after a toggle
     private static float amount;
     private static float previousAmount;
 
@@ -55,6 +61,15 @@ public final class SpiritVision {
             }
         }
 
+        if (toggleGrace > 0) {
+            toggleGrace--;
+        }
+        BeyonderSyncPayload self = mc.player != null ? ClientInbox.get(mc.player.getId()) : null;
+        if (active && toggleGrace == 0 && self != null && !self.spiritVision()
+                && mc.player != null && !mc.player.isCreative() && !mc.player.isSpectator()) {
+            active = false; // the server closed it (Spirituality ran dry)
+        }
+
         previousAmount = amount;
         float target = active ? 1.0F : 0.0F;
         if (amount < target) {
@@ -63,17 +78,37 @@ public final class SpiritVision {
             amount = Math.max(target, amount - FADE_PER_TICK);
         }
 
+        SpiritMarkers.drainInbox();
+
         if (active && amount > 0.5F && mc.level != null && mc.player != null && !mc.isPaused()) {
             spawnAuras(mc);
         }
     }
 
+    private static boolean canOpen(Player player) {
+        if (player.isCreative() || player.isSpectator()) {
+            return true;
+        }
+        BeyonderSyncPayload self = ClientInbox.get(player.getId());
+        return self != null && "seer".equals(self.pathway()) && self.spirituality() >= 2.0F;
+    }
+
     private static void toggle(Minecraft mc) {
-        active = !active;
         Player player = mc.player;
         if (player == null || mc.level == null) {
             return;
         }
+        if (!active && !canOpen(player)) {
+            BeyonderSyncPayload self = ClientInbox.get(player.getId());
+            boolean seer = self != null && "seer".equals(self.pathway());
+            player.displayClientMessage(Component.literal(seer
+                    ? "Your Spirituality is too low to open your Spirit Vision."
+                    : "You have no Spirit Vision. Only a Seer can open it.").withStyle(ChatFormatting.GRAY), true);
+            return;
+        }
+        active = !active;
+        toggleGrace = 20;
+        PacketDistributor.sendToServer(new SpiritVisionPayload(active));
         mc.level.playLocalSound(player.getX(), player.getEyeY(), player.getZ(),
                 SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS,
                 0.9F, active ? 0.55F : 0.4F, false);
@@ -116,6 +151,7 @@ public final class SpiritVision {
     }
 
     static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        ClientInbox.clear();
         active = false;
         amount = 0.0F;
         previousAmount = 0.0F;

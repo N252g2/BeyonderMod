@@ -1,5 +1,7 @@
 package io.github.n252g2.beyonder.client;
 
+import io.github.n252g2.beyonder.net.BeyonderSyncPayload;
+import io.github.n252g2.beyonder.net.ClientInbox;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -42,7 +44,11 @@ public final class SpiritAura {
         if (entity.getType().is(Tags.EntityTypes.BOSSES)) {
             score += 2.0F;
         }
-        // TODO: Beyonders: add their Sequence (Sequence 9 = +1 ... Sequence 0 = +10) once pathways exist.
+        // Beyonders: every Sequence climbed makes the spirit blaze brighter.
+        BeyonderSyncPayload beyonder = ClientInbox.get(entity.getId());
+        if (beyonder != null && !"none".equals(beyonder.pathway())) {
+            score += (10 - beyonder.sequence()) * 1.2F;
+        }
         return score;
     }
 

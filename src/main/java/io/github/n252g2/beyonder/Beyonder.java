@@ -3,12 +3,20 @@ package io.github.n252g2.beyonder;
 import com.mojang.logging.LogUtils;
 import io.github.n252g2.beyonder.block.GasLampBlock;
 import io.github.n252g2.beyonder.block.LampPostBlock;
+import io.github.n252g2.beyonder.core.BeyonderAttachments;
+import io.github.n252g2.beyonder.core.Pathway;
+import io.github.n252g2.beyonder.item.BeyonderPotionItem;
+import io.github.n252g2.beyonder.item.PendulumItem;
+import io.github.n252g2.beyonder.net.BeyonderNetwork;
+import io.github.n252g2.beyonder.server.BeyonderServerEvents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
@@ -76,6 +84,16 @@ public class Beyonder {
     public static final DeferredItem<BlockItem> TINGEN_COBBLES_ITEM = ITEMS.registerSimpleBlockItem("tingen_cobbles", TINGEN_COBBLES);
     public static final DeferredItem<BlockItem> SOOT_BRICKS_ITEM = ITEMS.registerSimpleBlockItem("soot_bricks", SOOT_BRICKS);
 
+    // Seer pathway
+    public static final DeferredItem<BeyonderPotionItem> SEER_POTION = ITEMS.registerItem("seer_potion",
+            p -> new BeyonderPotionItem(Pathway.SEER, 9, p), new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<BeyonderPotionItem> CLOWN_POTION = ITEMS.registerItem("clown_potion",
+            p -> new BeyonderPotionItem(Pathway.SEER, 8, p), new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+    public static final DeferredItem<BeyonderPotionItem> MAGICIAN_POTION = ITEMS.registerItem("magician_potion",
+            p -> new BeyonderPotionItem(Pathway.SEER, 7, p), new Item.Properties().stacksTo(1).rarity(Rarity.RARE));
+    public static final DeferredItem<PendulumItem> PENDULUM = ITEMS.registerItem("spirit_pendulum",
+            PendulumItem::new, new Item.Properties().stacksTo(1));
+
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> TAB = TABS.register("beyonder", () -> CreativeModeTab.builder()
             .title(Component.translatable("itemGroup.beyonder"))
             .withTabsBefore(CreativeModeTabs.SPAWN_EGGS)
@@ -85,6 +103,10 @@ public class Beyonder {
                 output.accept(LAMP_POST_ITEM.get());
                 output.accept(TINGEN_COBBLES_ITEM.get());
                 output.accept(SOOT_BRICKS_ITEM.get());
+                output.accept(SEER_POTION.get());
+                output.accept(CLOWN_POTION.get());
+                output.accept(MAGICIAN_POTION.get());
+                output.accept(PENDULUM.get());
             })
             .build());
 
@@ -92,6 +114,9 @@ public class Beyonder {
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         TABS.register(modBus);
+        BeyonderAttachments.register(modBus);
+        modBus.addListener(BeyonderNetwork::register);
+        BeyonderServerEvents.register();
         LOGGER.info("Beyonder loaded. The fog settles over Tingen.");
     }
 

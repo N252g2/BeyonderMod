@@ -31,6 +31,26 @@ public final class SpiritMarkers {
         MARKERS.add(marker);
     }
 
+    /** Adds a marker, replacing any earlier one with the same label (a new reading of the same question). */
+    public static void put(Marker marker) {
+        MARKERS.removeIf(m -> m.label().equalsIgnoreCase(marker.label()));
+        MARKERS.add(marker);
+    }
+
+    /** Takes divination results the server sent and turns them into markers in the current dimension. */
+    static void drainInbox() {
+        Minecraft mc = Minecraft.getInstance();
+        io.github.n252g2.beyonder.net.SpiritMarkerPayload p;
+        while ((p = io.github.n252g2.beyonder.net.ClientInbox.pollMarker()) != null) {
+            if (mc.level == null) {
+                continue;
+            }
+            int c = p.color();
+            put(new Marker(mc.level.dimension(), new Vec3(p.x(), p.y(), p.z()), p.label(),
+                    ((c >> 16) & 0xFF) / 255.0F, ((c >> 8) & 0xFF) / 255.0F, (c & 0xFF) / 255.0F));
+        }
+    }
+
     public static void clear() {
         MARKERS.clear();
     }

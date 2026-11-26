@@ -13,6 +13,7 @@ ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources",
 BLOCK = os.path.join(ROOT, "beyonder", "textures", "block")
 ENV = os.path.join(ROOT, "minecraft", "textures", "environment")
 MISC = os.path.join(ROOT, "beyonder", "textures", "misc")
+ITEM = os.path.join(ROOT, "beyonder", "textures", "item")
 
 
 def clamp(v):
@@ -233,6 +234,63 @@ def marker_beam():
     save(img, MISC, "marker_beam.png")
 
 
+def potion(name, liquid, glow):
+    """A squat apothecary bottle with a wax-sealed cork and a glowing liquid."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    glass = (190, 205, 215)
+    edge = (70, 78, 92)
+    # body: rows 6..14, rounded
+    for y in range(5, 15):
+        half = {5: 2, 6: 4, 7: 5, 8: 5, 9: 5, 10: 5, 11: 5, 12: 5, 13: 4, 14: 3}[y]
+        for x in range(8 - half, 8 + half):
+            border = x in (8 - half, 8 + half - 1) or y in (5, 14)
+            if border:
+                px[x, y] = edge + (255,)
+            elif y >= 8:
+                k = 0.75 + 0.35 * (1 - (y - 8) / 6)
+                c = tuple(clamp(v * k) for v in liquid)
+                if x == 8 - half + 1 and y < 12:
+                    c = tuple(clamp(v * 0.6 + 255 * 0.4) for v in liquid)  # highlight
+                px[x, y] = c + (255,)
+            else:
+                px[x, y] = glass + (110,)
+    # neck and cork
+    for y in (3, 4):
+        for x in (7, 8):
+            px[x, y] = edge + (255,)
+    for x in (6, 7, 8, 9):
+        px[x, 2] = (140, 34, 38, 255)   # wax seal
+    for x in (7, 8):
+        px[x, 1] = (110, 26, 30, 255)
+    # a glint of the liquid's glow
+    px[9, 10] = glow + (255,)
+    px[7, 12] = glow + (255,)
+    save(img, ITEM, name)
+
+
+def pendulum():
+    """A brass chain ending in a pointed crystal."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    brass, dark = (201, 160, 70), (120, 90, 40)
+    for i, y in enumerate(range(1, 9)):
+        x = 4 + i // 2
+        px[x, y] = (brass if i % 2 == 0 else dark) + (255,)
+    px[3, 1] = brass + (255,)
+    px[2, 1] = dark + (255,)
+    # crystal: diamond shape centred at (9, 11)
+    crystal = [(9, 8), (8, 9), (9, 9), (10, 9), (7, 10), (8, 10), (9, 10), (10, 10), (11, 10),
+               (8, 11), (9, 11), (10, 11), (8, 12), (9, 12), (10, 12), (9, 13), (9, 14)]
+    for (x, y) in crystal:
+        light = (x + (14 - y)) % 3
+        c = [(150, 120, 235), (110, 85, 200), (190, 170, 250)][light]
+        px[x, y] = c + (255,)
+    px[9, 8] = brass + (255,)
+    px[8, 9] = (225, 215, 255, 255)
+    save(img, ITEM, "spirit_pendulum.png")
+
+
 if __name__ == "__main__":
     cobbles()
     soot_bricks()
@@ -242,4 +300,8 @@ if __name__ == "__main__":
     moon_phases()
     aura()
     marker_beam()
+    potion("seer_potion.png", (88, 70, 200), (190, 170, 255))
+    potion("clown_potion.png", (190, 40, 55), (255, 170, 120))
+    potion("magician_potion.png", (40, 130, 150), (150, 240, 230))
+    pendulum()
     print("textures written")

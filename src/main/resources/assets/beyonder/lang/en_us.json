@@ -18,5 +18,11 @@
   "beyonder.configuration.fogStrength": "Fog strength",
   "beyonder.configuration.nightTint": "Red moon night tint",
   "message.beyonder.marker.added": "Spirit marker \"%s\" placed. Open your Spirit Vision to see it.",
-  "message.beyonder.marker.cleared": "Spirit markers cleared."
+  "message.beyonder.marker.cleared": "Spirit markers cleared.",
+  "item.beyonder.seer_potion": "Seer Potion",
+  "item.beyonder.clown_potion": "Clown Potion",
+  "item.beyonder.magician_potion": "Magician Potion",
+  "item.beyonder.spirit_pendulum": "Spirit Pendulum",
+  "death.attack.beyonder.lost_control": "%1$s lost control and was consumed by their own spirit",
+  "death.attack.beyonder.lost_control.player": "%1$s lost control while fighting %2$s"
 }

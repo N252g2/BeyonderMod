@@ -8,6 +8,7 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
@@ -22,6 +23,7 @@ public class BeyonderClient {
 
         modBus.addListener(BeyonderClient::onRegisterKeys);
         modBus.addListener(BeyonderClient::onRegisterReloadListeners);
+        modBus.addListener(BeyonderClient::onRegisterGuiLayers);
 
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onRenderFog);
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onFogColor);
@@ -36,6 +38,10 @@ public class BeyonderClient {
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(SpiritVision.KEY);
+    }
+
+    private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
+        event.registerAboveAll(Beyonder.id("beyonder_hud"), BeyonderHud::render);
     }
 
     private static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {

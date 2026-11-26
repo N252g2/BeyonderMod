@@ -17,6 +17,21 @@ It ships to players through the [Beyonder Launcher](https://github.com/N252g2/Be
 
 Visual settings are in *Mods > Beyonder > Config* or `config/beyonder-client.toml`.
 
+## The Seer pathway (0.3.0)
+
+- **Potions**: Seer (Sequence 9), Clown (8), Magician (7). Drinking the Seer potion makes you a Beyonder.
+  Advance only to the next Sequence, and only once the current potion is **fully digested**; drinking early,
+  skipping a Sequence or mixing pathways builds **loss of control**. At 100% you are consumed.
+- **Spirituality** powers your abilities and regenerates over time. Spirit Vision (V) is a Seer ability and
+  drains it while open; running dry closes the vision and unsettles you.
+- **Acting** digests the potion: as a Seer, divine and observe with Spirit Vision.
+- **Spirit Pendulum**: rename it in an anvil to ask a question (a player's name, `village`, `home`, or an ore
+  like `diamond`). It swings toward the answer and leaves a spirit marker. Costs 15 Spirituality.
+- **HUD**: your Sequence, Spirituality, digestion and loss of control, top left.
+- Halos in Spirit Vision blaze brighter for higher-Sequence Beyonders.
+- Test commands (ops): `/beyonder set <player> seer [sequence]`, `/beyonder digestion <player> <percent>`,
+  `/beyonder spirituality <player> <amount>`, `/beyonder calm <player>`; anyone: `/beyonder status`.
+
 ## Beyonder Shaders
 
 `shaderpack/` is our own Iris shader pack (Standard edition): soft shadows, hazy sun, red moonlight, flickering
