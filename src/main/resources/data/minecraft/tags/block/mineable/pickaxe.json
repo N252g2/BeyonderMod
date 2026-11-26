@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "beyonder:gas_lamp",
+    "beyonder:lamp_post",
+    "beyonder:tingen_cobbles",
+    "beyonder:soot_bricks"
+  ]
+}

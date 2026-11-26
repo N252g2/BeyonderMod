@@ -1,0 +1,20 @@
+{
+  "itemGroup.beyonder": "Beyonder",
+  "block.beyonder.gas_lamp": "Gas Lamp",
+  "block.beyonder.lamp_post": "Lamp Post",
+  "block.beyonder.tingen_cobbles": "Tingen Cobbles",
+  "block.beyonder.soot_bricks": "Soot-Stained Bricks",
+  "key.categories.beyonder": "Beyonder",
+  "key.beyonder.spirit_vision": "Spirit Vision",
+  "message.beyonder.spirit_vision.open": "Your spirit vision opens.",
+  "message.beyonder.spirit_vision.close": "The world settles back into colour.",
+  "beyonder.configuration.title": "Beyonder",
+  "beyonder.configuration.section.beyonder.client.toml": "Visual settings",
+  "beyonder.configuration.section.beyonder.client.toml.title": "Visual settings",
+  "beyonder.configuration.atmosphere": "Atmosphere",
+  "beyonder.configuration.colorGrading": "Color grading",
+  "beyonder.configuration.gradingStrength": "Grading strength",
+  "beyonder.configuration.tingenFog": "Tingen fog",
+  "beyonder.configuration.fogStrength": "Fog strength",
+  "beyonder.configuration.nightTint": "Red moon night tint"
+}
