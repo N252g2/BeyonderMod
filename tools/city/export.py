@@ -61,6 +61,9 @@ def write(canvas, path, marks, sign_colors=None):
 
 def known_blocks():
     names = set()
+    ref = "/home/claude/mcsrc3/src/net/minecraft/references/Blocks.java"
+    if os.path.exists(ref):
+        names |= {"minecraft:" + m for m in re.findall(r"\"([a-z0-9_]+)\"", open(ref).read())}
     src = "/home/claude/mcsrc3/src/net/minecraft/world/level/block/Blocks.java"
     if os.path.exists(src):
         names |= {"minecraft:" + m for m in re.findall(r"\"([a-z0-9_]+)\"", open(src).read())}

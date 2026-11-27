@@ -22,23 +22,29 @@ final class CityShots {
 
     private static final View[] VIEWS = {
             new View("01_plaza_aerial", "spawn", 0, 45, 75, 180, 28, 6000),
-            new View("02_cathedral_front", "cathedral", 0, 1.6, 22, 180, -22, 6000),
+            new View("02_cathedral_front", "cathedral", 9, 1.6, 26, 160, -24, 6000),
             new View("03_cathedral_side", "cathedral", -60, 30, -20, -90, 18, 6000),
-            new View("04_overhead", "spawn", 0, 150, 0, 180, 90, 6000),
+            new View("04_overhead", "spawn", 0, 70, 40, 180, 60, 6000),
             new View("05_daffodil_street", "daffodil", 0, 1.6, 0, -90, 2, 6000),
             new View("06_blackthorn", "blackthorn", 0, 1.6, 8, 180, 0, 6000),
             new View("07_confluence", "confluence", -60, 35, 60, -135, 22, 6000),
-            new View("08_station", "station", 0, 30, 70, 180, 20, 6000),
-            new View("09_iron_cross", "iron_cross", 0, 1.6, 0, 180, 0, 6000),
-            new View("10_golden_indus", "golden", 0, 25, 40, 180, 22, 6000),
-            new View("11_villas", "villas", 0, 30, 40, 180, 30, 6000),
-            new View("12_university", "university", 0, 35, 60, 180, 25, 6000),
-            new View("13_market", "market", 0, 20, 30, 180, 20, 6000),
-            new View("14_cemetery", "cemetery", 0, 25, 40, 180, 25, 6000),
-            new View("15_night_street", "daffodil", 0, 1.6, 0, -90, 2, 18000),
-            new View("16_night_plaza", "cathedral", 0, 3, 22, 180, -10, 18000),
-            new View("17_sewer", "sewer", 0, 0.1, 0, 90, 0, 6000),
+            new View("08_station", "station", 0, 22, 30, 180, 18, 6000),
+            new View("09_station_shed", "station", 70, 14, -40, 90, 10, 6000),
+            new View("10_khoy_university", "university", 30, 30, 10, 90, 22, 6000),
+            new View("11_market", "market", 0, 14, 22, 180, 22, 6000),
+            new View("12_iron_cross", "iron_cross", 0, 1.6, 0, 180, 0, 6000),
+            new View("13_golden_indus", "golden", 0, 25, 40, 180, 22, 6000),
+            new View("14_gardens", "gardens", 0, 25, -10, 0, 25, 6000),
+            new View("15_cemetery", "cemetery", 0, 22, -12, 0, 25, 6000),
+            new View("16_villas", "villas", 0, 30, 40, 180, 30, 6000),
+            new View("17_tingen_university", "tingen_university", 0, 25, -12, 0, 22, 6000),
+            new View("18_docks", "docks", 0, 18, -10, 0, 25, 6000),
+            new View("19_works", "works", 0, 30, 30, 180, 25, 6000),
+            new View("20_night_street", "daffodil", 0, 1.6, 0, -90, 2, 18000),
+            new View("21_night_plaza", "cathedral", 9, 3, 26, 160, -10, 18000),
+            new View("22_sewer", "sewer", 0, 0.1, 0, 90, 0, 6000),
     };
+
     private static final int SETTLE = 500;
 
     private CityShots() {}

@@ -65,11 +65,12 @@ def west_row(rng, L, st, d, lo, ro):
         storeys = 3 if daffodil else rng.choice((2, 3, 3))
         oriel = daffodil or rng.random() < 0.35
         dormer = storeys == 2 and rng.random() < 0.5
+        bay = not daffodil and not oriel and rng.random() < 0.6
         lamp = rng.random() < 0.4
         for j, w in enumerate(group):
-            segs.append((w, lambda end, w=w, sty=sty, j=j, storeys=storeys, oriel=oriel, dormer=dormer, lamp=lamp:
+            segs.append((w, lambda end, w=w, sty=sty, j=j, storeys=storeys, oriel=oriel, dormer=dormer, lamp=lamp, bay=bay:
                          B.terrace_house(rng, w, d, sty, storeys, oriel=oriel and w >= 6, door_left=j % 2 == 0, end=end,
-                                         lamp=lamp and j % 3 == 0, dormer=dormer)))
+                                         lamp=lamp and j % 3 == 0, dormer=dormer, bay=bay)))
     return ends(segs, lo, ro)
 
 
@@ -136,7 +137,7 @@ def golden_row(rng, L, st, d, lo, ro):
     segs = []
     for group in runs(rng, L, [7, 8, 8, 9], (3, 6)):
         sty = B.style(rng, rng.choice(("stucco", "stucco", "redslate")))
-        sty.roof = rng.choice((pt.SLATE, pt.COPPER, pt.SLATE))
+        sty.roof = rng.choice((pt.SLATE, pt.SLATE, pt.DEEPTILE, pt.COPPER))
         sty.lit = 0.45
         for w in group:
             if st.kind in ("avenue", "wide") and rng.random() < 0.3:
@@ -220,6 +221,8 @@ def plan(g):
     # north
     A(Street("Canal Street", "x", 122, 262, 639, "street"))
     A(Street("Foundry Street", "z", 535, 0, 116, "street"))
+    A(Street("Mill Street", "z", 300, 0, 116, "street"))
+    A(Street("Kiln Street", "x", 45, 255, 335, "street"))
     # north-west
     A(Street("Thornhill Street", "x", 55, 0, 103, "street"))
     A(Street("Cutler Street", "x", 115, 0, 103, "street"))
@@ -286,7 +289,7 @@ def main():
     for k, val in {"daffodil": (60, s, 240, -90), "confluence": (306, s, 455, 180), "station": (420, s, 95, 180),
                    "iron_cross": (590, s, 250, 180), "golden": (390, s, 380, 180), "villas": (240, s, 600, 180),
                    "university": (175, s, 90, 180), "market": (505, s, 230, 180), "cemetery": (530, s, 570, 180),
-                   "sewer": (200, s - 6, 177, 90)}.items():
+                   "sewer": (200, s - 6, 177, 90), "works": (570, s, 125, 180)}.items():
         marks.setdefault(k, val)
     print(f"generated in {time.time() - t0:.1f}s, palette {len(P.states)}")
     bad = export.check_palette()

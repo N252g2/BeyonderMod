@@ -76,6 +76,18 @@ def place_row(ground, cv, rng, side, lo, hi, line, depth, segments):
             pos += w
             continue
         cv.stamp(tv, x, z, facing=side)
+        # pave the strip in front of the facade so the pavement runs right up to the doors
+        st_ = cv.street
+        if side == "north":
+            row = (slice(z, z + 1), slice(x, x + fw))
+        elif side == "south":
+            row = (slice(z + fd - 1, z + fd), slice(x, x + fw))
+        elif side == "west":
+            row = (slice(z, z + fd), slice(x, x + 1))
+        else:
+            row = (slice(z, z + fd), slice(x + fw - 1, x + fw))
+        surf = cv.a[st_ - 1][row]
+        surf[surf == I("grass_block")] = I("b:flagstones")
         ground.free[z:z + fd, x:x + fw] = False
         ground.built[z:z + fd, x:x + fw] = True
         placed.append((x, z, fw, fd, side))

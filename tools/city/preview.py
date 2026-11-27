@@ -36,7 +36,11 @@ VANILLA = {
     "red_stained_glass_pane": (150, 40, 40), "blue_stained_glass": (50, 70, 170), "red_stained_glass": (150, 40, 40),
     "yellow_stained_glass_pane": (200, 180, 50), "purple_stained_glass_pane": (120, 50, 160),
     "bell": (200, 160, 40), "campfire": (100, 60, 30), "torch": (240, 200, 90), "wall_torch": (240, 200, 90),
-    "ladder": (130, 100, 60), "scaffolding": (170, 140, 80), "composter": (100, 70, 40), "cauldron": (60, 60, 60),
+    "ladder": (130, 100, 60), "polished_diorite": (192, 193, 194), "diorite": (188, 188, 188), "lightning_rod": (200, 120, 90),
+    "light_gray_stained_glass": (150, 150, 150), "polished_blackstone_wall": (48, 42, 50), "redstone_lamp": (180, 120, 60),
+    "anvil": (70, 70, 70), "candle": (230, 220, 200), "lectern": (150, 110, 60), "cartography_table": (110, 80, 60),
+    "smooth_quartz_slab": (236, 230, 222), "potted": (124, 68, 52), "poppy": (190, 40, 40), "dandelion": (230, 210, 40),
+    "spruce_fence": (114, 84, 48), "chain": (60, 60, 70), "wither_rose": (40, 40, 40), "scaffolding": (170, 140, 80), "composter": (100, 70, 40), "cauldron": (60, 60, 60),
 }
 
 

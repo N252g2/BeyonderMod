@@ -90,8 +90,11 @@ def roof_and_chimneys(v, w, d, top, st, rng, chimney_left=True, chimney_right=Fa
     zr = (d - 1) // 2
     if chimney_left:
         pt.chimney_stack(v, 0, zr, top, ridge + 1, st.wall, smoke=rng.random() < 0.6, wide=1)
+        v.fill(0, top, zr + 1, 0, ridge + 1, zr + 1, st.wall.block)
+        v.set(0, ridge + 2, zr + 1, S("flower_pot"))
     if chimney_right:
         pt.chimney_stack(v, w - 1, zr, top, ridge + 1, st.wall, smoke=rng.random() < 0.6, wide=1)
+        v.fill(w - 1, top, zr + 1, w - 1, ridge + 1, zr + 1, st.wall.block)
     for i in range(dormers):
         x = (w - 1) // 2 if dormers == 1 else 2 + i * (w - 4) // max(1, dormers - 1)
         pt.dormer(v, x, 1, top + 1, st.roof, st.wall, rng, st.lit)
@@ -111,7 +114,7 @@ def end_windows(v, w, d, storeys, st, rng, side):
 # ---------------------------------------------------------------- houses
 
 
-def terrace_house(rng, w, d, st, storeys=3, oriel=False, door_left=True, end=None, lamp=False, dormer=False):
+def terrace_house(rng, w, d, st, storeys=3, oriel=False, door_left=True, end=None, lamp=False, dormer=False, bay=False):
     h = 4 * storeys + d // 2 + 6
     v = Vol(w, h, d)
     top = body(v, w, d, storeys, st, rng)
@@ -123,11 +126,19 @@ def terrace_house(rng, w, d, st, storeys=3, oriel=False, door_left=True, end=Non
     v.set(xd, 3, 2, S("glass_pane"))
     v.set(xd, 3, 1, st.trim.block)
     win_xs = [x for x in range(1, w - 1) if x != xd]
-    # ground floor: a paired window away from the door
-    for x in win_xs:
-        if abs(x - xd) >= 2 or w <= 5:
-            pt.window(v, x, 1, 1, rng, st.lit)
-            v.set(x, 3, 1, st.trim.block)
+    # ground floor: a paired window away from the door, or a canted bay under its own little roof
+    if bay and w >= 6:
+        bx0, bx1 = (xd + 1, w - 2) if door_left else (1, xd - 1)
+        v.fill(bx0, 0, 0, bx1, 0, 0, st.trim.block)
+        v.fill(bx0, 1, 0, bx1, 2, 0, pt.LIT if rng.random() < st.lit else pt.WINDOW)
+        v.fill(bx0, 3, 0, bx1, 3, 0, st.roof.slab("bottom"))
+        v.fill(bx0, 1, 1, bx1, 2, 1, AIR)
+        v.fill(bx0, 3, 1, bx1, 3, 1, st.trim.block)
+    else:
+        for x in win_xs:
+            if abs(x - xd) >= 2 or w <= 5:
+                pt.window(v, x, 1, 1, rng, st.lit)
+                v.set(x, 3, 1, st.trim.block)
     # upper floors
     for k in range(1, storeys):
         y = 4 * k + 1
@@ -495,18 +506,21 @@ def factory(rng, w, d, st, name=None):
     v.fill(xc - 1, 1, 1, xc + 1, 4, 1, AIR)
     v.fill(xc - 1, 1, 2, xc + 1, 4, 2, S("iron_bars"))
     v.fill(0, hh, 0, w - 1, hh, 0, st.wall.stairs("south", "top"))
-    # sawtooth: ridges along x, glazed faces looking north
+    # sawtooth: ridges along x, the glazed faces looking north
+    roof = pt.DEEPTILE if st.roof in (pt.CLAY,) else st.roof
     z = 1
     while z + 3 < d:
-        for i in range(3):
-            v.fill(0, hh + 1 + i, z + i, w - 1, hh + 1 + i, z + i, st.roof.stairs("north") if False else st.roof.stairs("south"))
-        v.fill(1, hh + 1, z + 3, w - 2, hh + 3, z + 3, S("glass"))
-        v.fill(0, hh + 4, z + 3, w - 1, hh + 4, z + 3, st.roof.slab("bottom"))
-        v.fill(0, hh + 1, z + 3, 0, hh + 3, z + 3, st.wall.block); v.fill(w - 1, hh + 1, z + 3, w - 1, hh + 3, z + 3, st.wall.block)
-        for i in range(3):
-            v.fill(0, hh + 1, z + i, 0, hh + i, z + i, st.wall.block); v.fill(w - 1, hh + 1, z + i, w - 1, hh + i, z + i, st.wall.block)
+        v.fill(1, hh + 1, z, w - 2, hh + 3, z, S("glass"))
+        v.fill(0, hh + 4, z, w - 1, hh + 4, z, roof.slab("bottom"))
+        for i in range(1, 4):
+            v.fill(0, hh + 4 - i, z + i, w - 1, hh + 4 - i, z + i, roof.stairs("north"))
+            v.fill(1, hh + 1, z + i, w - 2, hh + 3 - i, z + i, AIR)
+        v.fill(0, hh + 1, z, 0, hh + 3, z, st.wall.block); v.fill(w - 1, hh + 1, z, w - 1, hh + 3, z, st.wall.block)
+        for i in range(1, 4):
+            v.fill(0, hh + 1, z + i, 0, hh + 3 - i, z + i, st.wall.block)
+            v.fill(w - 1, hh + 1, z + i, w - 1, hh + 3 - i, z + i, st.wall.block)
         z += 4
-    v.fill(0, hh + 1, z, w - 1, hh + 1, d - 1, st.roof.slab("bottom"))
+    v.fill(0, hh + 1, z, w - 1, hh + 1, d - 1, roof.slab("bottom"))
     # chimney: 3x3 brick shaft with a corbelled cap and smoke
     cx, cz = w - 4, d - 4
     ch = rng.randint(30, 38)

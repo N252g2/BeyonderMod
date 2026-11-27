@@ -169,20 +169,29 @@ def lancet_z(v, x, z0, z1, y0, y1, frame, mull=None):
     v.set(x, y1, z0, frame.stairs("south", "top")); v.set(x, y1, z1, frame.stairs("north", "top"))
 
 
-def dial(v, cx, cy, z, face_dir, r=3):
-    """A big clock dial of blocks on the plane z (or x) with hands at ten past ten."""
+def dial(v, cx, cy, z, face_dir, r=4, axis="z"):
+    """A big clock face of blocks: pale stone rim, white face, hour marks, hands at ten past ten.
+    axis "z": the face lies in the plane z (facing north/south); axis "x": in the plane x=z argument."""
+    def put(dx, dy, b):
+        if axis == "z":
+            v.set(cx + dx, cy + dy, z, b)
+        else:
+            # looking at an east/west face, "dx" runs along z
+            v.set(z, cy + dy, cx + (dx if face_dir == "east" else -dx), b)
+    rim, face, ink = S("b:ashlar"), S("calcite"), S("polished_blackstone")
     for dx in range(-r, r + 1):
         for dy in range(-r, r + 1):
-            d2 = dx * dx + dy * dy
-            if d2 <= r * r + 1:
-                b = S("calcite") if d2 < (r - 0.5) ** 2 else S("polished_blackstone")
-                v.set(cx + dx, cy + dy, z, b)
+            d = (dx * dx + dy * dy) ** 0.5
+            if d <= r + 0.35:
+                put(dx, dy, face if d <= r - 0.65 else rim)
     for dx, dy in ((0, r - 1), (r - 1, 0), (0, -(r - 1)), (-(r - 1), 0)):
-        v.set(cx + dx, cy + dy, z, S("polished_blackstone"))
+        put(dx, dy, ink)
     for k in range(1, r - 1):
-        v.set(cx - k, cy + k // 2, z, S("gray_concrete")) if False else v.set(cx - k, cy + (k + 1) // 2, z, S("polished_blackstone"))
-        v.set(cx + k, cy + k, z, S("polished_blackstone"))
-    v.set(cx, cy, z, S("b:clock_face", facing=face_dir))
+        put(0, k, ink)                       # minute hand to twelve
+    put(-1, 1, ink)                          # hour hand toward ten
+    if r >= 4:
+        put(-2, 1, ink)
+    put(0, 0, S("b:clock_face", facing=face_dir))
 
 
 def pinnacle(v, x, z, y, mat, h=3):
@@ -334,19 +343,10 @@ def cathedral(rng):
     v.fill(cx - 3, 0, 0, cx + 3, 0, 0, S("polished_blackstone"))
     lancet_x(v, cx - 2, cx + 2, 0, 9, 17, black, black.wall())
     # clock dials on all four faces, belfry openings above
-    dial(v, cx, 29, 0, "north")
-    for y in range(26, 33):
-        for z in range(2, 9):
-            pass
-    for side_x, face in ((t0, "west"), (t1, "east")):
-        for dz in range(-3, 4):
-            for dy in range(-3, 4):
-                d2 = dz * dz + dy * dy
-                if d2 <= 10:
-                    v.set(side_x, 29 + dy, 5 + dz, S("calcite") if d2 < 6.25 else S("polished_blackstone"))
-        v.set(side_x, 29, 5, S("b:clock_face", facing=face))
-        v.set(side_x, 31, 5, S("polished_blackstone")); v.set(side_x, 30, 5, S("polished_blackstone"))
-        v.set(side_x, 29, 6 if face == "west" else 4, S("polished_blackstone"))
+    dial(v, cx, 30, 0, "north", 4)
+    dial(v, 5, 30, t0, "west", 4, axis="x")
+    dial(v, 5, 30, t1, "east", 4, axis="x")
+    dial(v, cx, 30, 10, "south", 4)
     for x in range(t0 + 2, t1 - 1, 3):
         v.fill(x, 39, 0, x + 1, 45, 0, S("iron_bars"))
         v.set(x, 46, 0, black.stairs("east", "top")); v.set(x + 1, 46, 0, black.stairs("west", "top"))
@@ -585,3 +585,730 @@ def blackthorn(g, cv, rng, marks):
     for i in range(len(cv.signs) - 3, len(cv.signs)):
         cv.signs[i] = cv.signs[i] + ("white",)
     marks["blackthorn"] = (x + w // 2, s, line + 3, 0)
+
+
+# ---------------------------------------------------------------- shared landmark helpers
+
+
+def enclose(cv, x0, z0, x1, z1, gates=(), wall="b:ashlar_wall", rail="b:iron_railing", post="b:ashlar"):
+    """A low wall with railings round a rectangle; gates are (x, z) cells left open (3 wide)."""
+    s = cv.street
+    open_cells = set()
+    for gx, gz in gates:
+        for d in (-1, 0, 1):
+            open_cells.add((gx + d, gz)); open_cells.add((gx, gz + d))
+    for x in range(x0, x1 + 1):
+        for z in (z0, z1):
+            _fence_cell(cv, x, z, s, wall, rail, post, (x - x0) % 6 == 0, (x, z) in open_cells)
+    for z in range(z0 + 1, z1):
+        for x in (x0, x1):
+            _fence_cell(cv, x, z, s, wall, rail, post, (z - z0) % 6 == 0, (x, z) in open_cells)
+    for gx, gz in gates:
+        for d in (-2, 2):
+            for cx, cz in ((gx + d, gz), (gx, gz + d)):
+                if (cx in (x0, x1) or cz in (z0, z1)) and x0 <= cx <= x1 and z0 <= cz <= z1:
+                    cv.a[s:s + 2, cz, cx] = I(post)
+                    cv.a[s + 2, cz, cx] = I("b:gas_lamp")
+
+
+def _fence_cell(cv, x, z, s, wall, rail, post, is_post, is_open):
+    if is_open:
+        cv.a[s:s + 3, z, x] = 0
+        return
+    if is_post:
+        cv.a[s:s + 2, z, x] = I(post)
+        cv.a[s + 2, z, x] = I("b:ashlar_slab", type="bottom")
+    else:
+        cv.a[s, z, x] = I(wall)
+        cv.a[s + 1, z, x] = I(rail)
+
+
+def lamp(cv, x, z, y=None):
+    s = cv.street if y is None else y
+    cv.a[s:s + 2, z, x] = I("b:lamp_post")
+    cv.a[s + 2, z, x] = I("b:gas_lamp")
+
+
+def bench(cv, x, z, facing):
+    cv.set(x, cv.street, z, I("dark_oak_stairs", facing=facing))
+
+
+def classical(rng, w, d, storeys, cols, name, wall="b:ashlar", roof=None, dome=False, lit=0.5, arched=False):
+    """A classical public building facing north: plinth, rows of tall windows, a columned portico, cornice."""
+    roof = roof or pt.SLATE
+    sh = 5
+    top = sh * storeys + 1
+    v = Vol(w, top + 30, d)
+    v.fill(0, 0, 2, w - 1, top, d - 1, S(wall))
+    v.fill(1, 1, 3, w - 2, top - 1, d - 2, AIR)
+    v.fill(1, 0, 3, w - 2, 0, d - 2, S("polished_andesite"))
+    for k in range(1, storeys):
+        v.fill(1, sh * k, 3, w - 2, sh * k, d - 2, S("dark_oak_planks"))
+        v.fill(0, sh * k, 2, w - 1, sh * k, 2, S("b:carved_ashlar"))
+    v.fill(0, 0, 2, w - 1, 1, 2, S("b:carved_ashlar"))
+    pw = cols * 3 - 2
+    px0 = (w - pw) // 2
+    px1 = px0 + pw - 1
+    for k in range(storeys):
+        y = sh * k + 1
+        for x in range(2, w - 2, 3):
+            if px0 - 1 <= x <= px1 + 1:
+                continue
+            b = pt.LIT if rng.random() < lit else pt.WINDOW
+            v.fill(x, y + 1, 2, x, y + 3, 2, b)
+            if arched:
+                v.set(x, y + 4, 2, S("b:ashlar_stairs", facing="south", half="top"))
+        for z in range(5, d - 2, 3):
+            for x in (0, w - 1):
+                v.fill(x, y + 1, z, x, y + 3, z, pt.LIT if rng.random() < lit else pt.WINDOW)
+    # portico
+    v.fill(px0 - 1, 0, 0, px1 + 1, 0, 1, S("b:ashlar"))
+    v.fill(px0 - 1, 0, 0, px1 + 1, 0, 0, S("b:ashlar_stairs", facing="south"))
+    for x in range(px0, px1 + 1, 3):
+        v.fill(x, 1, 1, x, top - 2, 1, S("b:ashlar_pillar", axis="y"))
+        v.set(x, top - 1, 1, S("b:carved_ashlar"))
+    v.fill(px0 - 1, top, 0, px1 + 1, top, 2, S("b:ashlar"))
+    v.fill(px0 - 1, top - 1, 0, px1 + 1, top - 1, 0, S("b:ashlar_stairs", facing="south", half="top"))
+    for i in range(pw // 2 + 2):
+        y = top + 1 + i // 2
+        xl, xr = px0 - 1 + i, px1 + 1 - i
+        if xl > xr:
+            break
+        v.set(xl, y, 0, S("b:ashlar_stairs", facing="east")); v.set(xr, y, 0, S("b:ashlar_stairs", facing="west"))
+        if xr - xl > 1:
+            v.fill(xl + 1, top + 1, 0, xr - 1, y, 2, S("b:ashlar"))
+    xd = w // 2
+    v.fill(xd - 1, 1, 2, xd + 1, 4, 2, AIR)
+    v.set(xd, 1, 3, AIR)
+    pt.double_door(v, xd - 1, 1, 3, "dark_oak", "north")
+    words = name.split(" ")
+    half = (len(words) + 1) // 2
+    v.sign(xd, top - 1, 1 + 1, S("dark_oak_wall_sign", facing="north"), ["", " ".join(words[:half]).upper(), " ".join(words[half:]).upper(), ""])
+    # cornice and balustrade
+    v.fill(0, top, 1, w - 1, top, 1, S("b:ashlar_stairs", facing="south", half="top"))
+    v.fill(0, top + 1, 2, w - 1, top + 1, d - 1, S("b:ashlar_wall"))
+    v.fill(1, top + 1, 3, w - 2, top + 1, d - 2, AIR)
+    if dome:
+        pt.hip(v, 1, w - 2, 3, d - 2, top + 1, roof, flat_top=2)
+        dcx, dcz, r = w // 2, d // 2 + 1, min(w, d) // 4
+        _dome(v, dcx, dcz, r, top + 2)
+    else:
+        pt.hip(v, 1, w - 2, 3, d - 2, top + 1, roof)
+    for k in range(storeys):
+        pt.furnish(v, 1, w - 2, 3, d - 2, sh * k + 1, rng, "office")
+        pt.ceiling_lamp(v, w // 2, sh * k + sh - 1, d // 2)
+    return v
+
+
+def _dome(v, cx, cz, r, y0, mat="waxed_oxidized_cut_copper", drum=4):
+    for y in range(y0, y0 + drum):
+        for x in range(cx - r, cx + r + 1):
+            for z in range(cz - r, cz + r + 1):
+                dd = ((x - cx) ** 2 + (z - cz) ** 2) ** 0.5
+                if dd <= r:
+                    on_edge = dd > r - 1
+                    v.set(x, y, z, (S("b:ashlar") if (x + z) % 3 or y == y0 else pt.LIT) if on_edge else AIR)
+    y = y0 + drum
+    for k in range(r + 2):
+        rr = (max(0.0, (r + 0.5) ** 2 - (k * 1.15) ** 2)) ** 0.5
+        if rr < 0.6:
+            break
+        for x in range(cx - r - 1, cx + r + 2):
+            for z in range(cz - r - 1, cz + r + 2):
+                if ((x - cx) ** 2 + (z - cz) ** 2) ** 0.5 <= rr:
+                    v.set(x, y + k, z, S(mat))
+        top = y + k
+    v.fill(cx, top + 1, cz, cx, top + 2, cz, S("b:ashlar_wall"))
+    v.set(cx, top + 3, cz, S("lightning_rod"))
+
+
+def college_range(rng, w, d, storeys, wall, trim, roof, lit=0.4, door=True):
+    """Collegiate Gothic range facing north: pointed windows, a steep roof with dormers, a door to the quad."""
+    top = 4 * storeys
+    v = Vol(w, top + d + 8, d)
+    v.fill(0, 0, 1, w - 1, top, d - 1, wall.block)
+    v.fill(1, 1, 2, w - 2, top - 1, d - 2, AIR)
+    v.fill(1, 0, 2, w - 2, 0, d - 2, S("oak_planks"))
+    for k in range(1, storeys):
+        v.fill(1, 4 * k, 2, w - 2, 4 * k, d - 2, S("oak_planks"))
+    v.fill(0, 0, 1, w - 1, 0, 1, trim.block)
+    for k in range(storeys):
+        y = 4 * k + 1
+        for x in range(2, w - 2, 3):
+            for z in (1, d - 1):
+                v.fill(x, y, z, x, y + 1, z, pt.LIT if rng.random() < lit else pt.WINDOW)
+                v.set(x, y + 2, z, trim.stairs("east", "top")) if False else v.set(x, y + 2, z, trim.block)
+        # buttress strips between the windows
+        for x in range(0, w, 3):
+            v.fill(x, 0, 0, x, top - 1, 0, wall.block) if False else None
+    if door:
+        xd = w // 2
+        v.fill(xd, 1, 1, xd, 3, 1, AIR)
+        v.set(xd, 3, 1, trim.stairs("east", "top")) if False else v.set(xd, 3, 1, AIR)
+        pt.door(v, xd, 1, 2, "oak", "north")
+        v.set(xd, 3, 2, S("glass_pane"))
+        v.set(xd, 4, 1, trim.block)
+        v.set(xd, 0, 0, trim.stairs("south"))
+    v.fill(0, top, 0, w - 1, top, 0, trim.stairs("south", "top"))
+    ridge = steep_gable_x(v, 0, w - 1, 0, d, top + 1, roof, wall.block)
+    # wall dormers: the facade rises through the eaves in little gables
+    for xd in range(4, w - 4, 7):
+        v.fill(xd - 1, top + 1, 0, xd + 1, top + 6, 0, AIR)
+        v.fill(xd - 1, top + 1, 1, xd + 1, top + 3, 3, wall.block)
+        v.fill(xd, top + 1, 1, xd, top + 2, 1, pt.LIT if rng.random() < lit else pt.WINDOW)
+        v.set(xd - 1, top + 4, 1, trim.stairs("east")); v.set(xd + 1, top + 4, 1, trim.stairs("west"))
+        v.set(xd, top + 4, 1, wall.block); v.set(xd, top + 5, 1, trim.slab("bottom"))
+        v.fill(xd - 1, top + 4, 2, xd - 1, top + 4, 3, roof.stairs("east")); v.fill(xd + 1, top + 4, 2, xd + 1, top + 4, 3, roof.stairs("west"))
+        v.fill(xd, top + 4, 2, xd, top + 4, 3, roof.block); v.fill(xd, top + 5, 2, xd, top + 5, 3, roof.slab("bottom"))
+        v.fill(xd - 1, top + 1, 0, xd + 1, top + 1, 0, trim.stairs("south", "top"))
+    for x in range(2, w - 3, 9):
+        pt.chimney_stack(v, x, d // 2, top, ridge + 1, wall, rng.random() < 0.4, 2)
+    for k in range(storeys - 1):
+        pt.stair_run(v, w - 2, 3, 4 * k + 1, 4, "oak")
+    for k in range(storeys):
+        pt.furnish(v, 1, w - 2, 2, d - 2, 4 * k + 1, rng, "office")
+        pt.ceiling_lamp(v, w // 2, 4 * k + 3, d // 2)
+    return v
+
+
+def gate_tower(rng, w, d, h, wall, trim, roof):
+    v = Vol(w, h + 10, d)
+    v.fill(0, 0, 0, w - 1, h, d - 1, wall.block)
+    v.fill(1, 1, 1, w - 2, h - 1, d - 2, AIR)
+    xc = w // 2
+    v.fill(xc - 1, 0, 0, xc + 1, 4, d - 1, AIR)
+    v.fill(xc - 1, 0, 0, xc + 1, 0, d - 1, S("b:flagstones")) if False else None
+    v.set(xc - 1, 4, 0, trim.stairs("east", "top")); v.set(xc + 1, 4, 0, trim.stairs("west", "top"))
+    v.set(xc - 1, 4, d - 1, trim.stairs("east", "top")); v.set(xc + 1, 4, d - 1, trim.stairs("west", "top"))
+    for y in range(8, h - 2, 5):
+        v.fill(xc, y, 0, xc, y + 2, 0, pt.LIT if rng.random() < 0.5 else pt.WINDOW)
+        v.fill(xc, y, d - 1, xc, y + 2, d - 1, pt.WINDOW)
+    v.set(xc, h - 3, 0, S("b:clock_face", facing="north"))
+    # battlements and corner turrets
+    for x in range(w):
+        for z in range(d):
+            if x in (0, w - 1) or z in (0, d - 1):
+                v.set(x, h + 1, z, trim.block if (x + z) % 2 == 0 else AIR)
+    for x, z in ((0, 0), (w - 1, 0), (0, d - 1), (w - 1, d - 1)):
+        v.fill(x, h + 1, z, x, h + 4, z, trim.block)
+        v.set(x, h + 5, z, trim.slab("bottom"))
+    return v
+
+
+# ---------------------------------------------------------------- the station, its square and the railway
+
+
+@landmark
+def station(g, cv, rng, marks):
+    s = cv.street
+    # square in front
+    sq = (322, 84, 518, 103)
+    reserve(g, *sq)
+    ground(g, cv, *sq, "b:flagstones")
+    for x in range(sq[0] + 6, sq[2], 14):
+        lamp(cv, x, sq[1] + 2); lamp(cv, x, sq[3] - 2)
+    for x in range(sq[0] + 13, sq[2], 28):
+        cv.a[s - 1, 94, x] = I("grass_block")
+        tree(cv, x, s, 94, rng, "plane")
+    # a cab rank of hay and water troughs
+    for x in range(sq[0] + 20, sq[0] + 40, 4):
+        cv.a[s, sq[3] - 4, x] = I("hay_block")
+        cv.a[s, sq[3] - 4, x + 1] = I("cauldron")
+    # the station building (front to the south)
+    bx0, bx1, bz0, bz1 = 336, 504, 62, 83
+    reserve(g, bx0, bz0, bx1, bz1)
+    st = B.Style(pt.RED, pt.ASHLAR, pt.STOCK, pt.SLATE, "dark_oak", "dark_oak_planks", 0.5)
+    w, d = bx1 - bx0 + 1, bz1 - bz0 + 1
+    v = Vol(w, 60, d)
+    top = 12
+    v.fill(0, 0, 1, w - 1, top, d - 1, st.wall.block)
+    v.fill(1, 1, 2, w - 2, top - 1, d - 2, AIR)
+    v.fill(1, 0, 2, w - 2, 0, d - 2, S("polished_andesite"))
+    v.fill(1, 6, 2, w - 2, 6, d - 2, S("dark_oak_planks"))
+    v.fill(0, 0, 1, w - 1, 0, 1, S("b:ashlar"))
+    v.fill(0, 6, 1, w - 1, 6, 1, S("b:ashlar"))
+    for x in range(2, w - 2, 3):
+        v.fill(x, 1, 1, x, 3, 1, pt.LIT if rng.random() < 0.5 else pt.WINDOW)
+        v.set(x, 4, 1, S("b:ashlar_stairs", facing="south", half="top"))
+        v.fill(x, 8, 1, x, 9, 1, pt.LIT if rng.random() < 0.4 else pt.WINDOW)
+        v.set(x, 10, 1, S("b:ashlar"))
+    # arched entrances under a glass canopy
+    xc = w // 2
+    for ex in range(xc - 12, xc + 13, 6):
+        v.fill(ex - 1, 1, 1, ex + 1, 4, 1, AIR)
+        v.set(ex - 1, 4, 1, S("b:ashlar_stairs", facing="east", half="top")); v.set(ex + 1, 4, 1, S("b:ashlar_stairs", facing="west", half="top"))
+        pt.double_door(v, ex - 1, 1, 2, "dark_oak", "north")
+        v.set(ex + 1, 1, 2, S("dark_oak_door", facing="north", half="lower", hinge="right"))
+        v.set(ex + 1, 2, 2, S("dark_oak_door", facing="north", half="upper", hinge="right"))
+    v.fill(xc - 15, 5, 0, xc + 15, 5, 0, S("glass"))
+    for x in range(xc - 15, xc + 16, 5):
+        v.fill(x, 1, 0, x, 4, 0, S("polished_blackstone_wall"))
+    v.fill(0, top, 0, w - 1, top, 0, S("b:ashlar_stairs", facing="south", half="top"))
+    pt.gable_x(v, 0, w - 1, 0, d - 1, top + 1, pt.SLATE, st.wall)
+    # end pavilions with pyramid roofs and a central clock tower
+    for px in (0, w - 9):
+        v.fill(px, 0, 0, px + 8, top + 4, d - 1, st.wall.block)
+        v.fill(px + 1, 1, 1, px + 7, top + 3, d - 2, AIR)
+        for y0 in (2, 8, 13):
+            for x in range(px + 2, px + 7, 2):
+                v.fill(x, y0, 0, x, y0 + 1, 0, pt.LIT if rng.random() < 0.5 else pt.WINDOW)
+        pt.hip(v, px, px + 8, 0, d - 1, top + 5, pt.SLATE)
+    tx0 = xc - 4
+    v.fill(tx0, 0, 0, tx0 + 8, 34, 8, st.wall.block)
+    v.fill(tx0 + 1, 1, 1, tx0 + 7, 33, 7, AIR)
+    v.fill(xc - 1, 1, 0, xc + 1, 4, 0, AIR)
+    dial(v, xc, 27, 0, "north", 3)
+    for y in range(8, 22, 4):
+        v.fill(xc, y, 0, xc, y + 2, 0, pt.WINDOW)
+    v.fill(tx0, 35, 0, tx0 + 8, 35, 8, S("b:ashlar"))
+    pt.hip(v, tx0, tx0 + 8, 0, 8, 36, pt.SLATE)
+    v.sign(xc, 5, 1, S("dark_oak_wall_sign", facing="north"), ["", "TINGEN", "CENTRAL STATION", ""])
+    cv.stamp(v, bx0, bz0, facing="south")
+    marks["station"] = (xc + bx0, s, sq[3] - 3, 180)
+    # the train shed behind: platforms along x, tracks running east out of the city
+    shx0, shx1, shz0, shz1 = 344, 496, 10, 61
+    reserve(g, shx0, shz0, 639, shz1)
+    ground(g, cv, shx0, shz0, 639, shz1, "gravel", clear=True)
+    cv.a[s:s + 30, shz0:shz1 + 1, shx0:shx1 + 1] = 0
+    tracks = [14, 22, 30, 38, 46, 54]
+    for tz in tracks:
+        for x in range(shx0 + 4, 640):
+            cv.a[s, tz, x] = I("rail", shape="east_west")
+            cv.a[s - 1, tz, x] = I("gravel")
+        cv.a[s, tz, shx0 + 3] = I("b:ashlar")            # buffer stop
+        cv.a[s + 1, tz, shx0 + 3] = I("red_concrete") if False else I("b:ashlar_slab", type="bottom")
+    for pz in (17, 18, 19, 25, 26, 27, 33, 34, 35, 41, 42, 43, 49, 50, 51):
+        cv.a[s, pz, shx0:shx1 - 2] = I("smooth_stone")
+        cv.a[s - 1, pz, shx0:shx1 - 2] = I("stone")
+    for pz in (18, 26, 34, 42, 50):
+        for x in range(shx0 + 8, shx1 - 4, 12):
+            cv.a[s + 1, pz, x] = I("dark_oak_stairs", facing="north")
+            cv.a[s + 1:s + 4, pz, x + 6] = I("polished_blackstone_wall")
+            cv.a[s + 4, pz, x + 6] = I("lantern")
+    # concourse across the buffer end
+    cv.a[s, shz0:shz1 + 1, shx0:shx0 + 3] = I("smooth_stone")
+    # the shed roof: two spans of iron and glass
+    for span0, span1 in ((shz0, 35), (36, shz1)):
+        mid = (span0 + span1) / 2
+        half = (span1 - span0) / 2
+        for z in range(span0, span1 + 1):
+            t = (z - mid) / half
+            yy = s + 9 + int(round(9 * (1 - t * t) ** 0.5))
+            for x in range(shx0, shx1 + 1):
+                rib = (x - shx0) % 8 == 0
+                cv.a[yy, z, x] = I("polished_deepslate") if rib or z in (span0, span1) else I("light_gray_stained_glass")
+            if z in (span0, span1):
+                for x in range(shx0, shx1 + 1, 8):
+                    cv.a[s + 1:yy, z, x] = I("polished_blackstone_wall")
+        # gable screens at the open ends
+        for x in (shx1,):
+            for z in range(span0, span1 + 1):
+                t = (z - mid) / half
+                yy = s + 9 + int(round(9 * (1 - t * t) ** 0.5))
+                for y in range(s + 9, yy):
+                    cv.a[y, z, x] = I("light_gray_stained_glass") if (z + y) % 4 else I("polished_deepslate")
+    # signal posts along the open line
+    for x in range(shx1 + 20, 640, 40):
+        for tz in (tracks[0] - 2, tracks[-1] + 2):
+            cv.a[s:s + 4, tz, x] = I("polished_blackstone_wall")
+            cv.a[s + 4, tz, x] = I("redstone_lamp", lit="true")
+    # level crossing where Foundry Street meets the line: cobbles between the rails
+    zs = range(shz0, shz1 + 1)
+    for z in zs:
+        for x in range(530, 541):
+            if cv.a[s, z, x] != I("rail", shape="east_west"):
+                cv.a[s - 1, z, x] = I("b:tingen_cobbles")
+                cv.a[s, z, x] = 0
+    enclose(cv, shx1 + 1, shz0 - 2, 639, shz0 - 2, (), "b:stock_brick_wall", "b:iron_railing", "b:stock_bricks")
+    enclose(cv, shx1 + 1, shz1 + 2, 639, shz1 + 2, ((535, shz1 + 2),), "b:stock_brick_wall", "b:iron_railing", "b:stock_bricks")
+    reserve(g, shx1, shz1 + 1, 639, shz1 + 3)
+
+
+# ---------------------------------------------------------------- Khoy University
+
+
+@landmark
+def khoy_university(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 120, 4, 224, 164
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "grass_block")
+    wall, trim, roof = pt.RED, pt.ASHLAR, pt.SLATE
+    quads = [(124, 10, 214, 78), (124, 90, 214, 158)]
+    for qi, (qx0, qz0, qx1, qz1) in enumerate(quads):
+        dd = 11
+        # four ranges facing into the quad
+        n = college_range(rng, qx1 - qx0 + 1 - 2 * dd, dd, 3, wall, trim, roof)
+        cv.stamp(n, qx0 + dd, qz0, facing="south")                         # north range, front to the quad
+        sr = college_range(rng, qx1 - qx0 + 1 - 2 * dd, dd, 3, wall, trim, roof)
+        cv.stamp(sr, qx0 + dd, qz1 - dd + 1, facing="north")
+        wr = college_range(rng, qz1 - qz0 + 1, dd, 3, wall, trim, roof)
+        cv.stamp(wr, qx0, qz0, facing="east")
+        er = college_range(rng, qz1 - qz0 + 1, dd, 3, wall, trim, roof)
+        cv.stamp(er, qx1 - dd + 1, qz0, facing="west")
+        # gate tower in the east range, facing the river
+        gt = gate_tower(rng, 9, 13, 22, wall, trim, roof)
+        gz = (qz0 + qz1) // 2 - 4
+        cv.stamp(gt, qx1 - 12, gz, facing="east")
+        # the quad: lawn, crossing paths, a great tree and lamps
+        lx0, lz0, lx1, lz1 = qx0 + dd, qz0 + dd, qx1 - dd, qz1 - dd
+        cv.a[s - 1, lz0:lz1 + 1, lx0:lx1 + 1] = I("grass_block")
+        mx, mz = (lx0 + lx1) // 2, (lz0 + lz1) // 2
+        cv.a[s - 1, mz - 1:mz + 2, lx0:lx1 + 1] = I("b:flagstones")
+        cv.a[s - 1, lz0:lz1 + 1, mx - 1:mx + 2] = I("b:flagstones")
+        cv.a[s - 1, lz0:lz0 + 2, lx0:lx1 + 1] = I("b:flagstones")
+        cv.a[s - 1, lz1 - 1:lz1 + 1, lx0:lx1 + 1] = I("b:flagstones")
+        tree(cv, lx0 + 6, s, lz0 + 6, rng, "plane"); tree(cv, lx1 - 6, s, lz1 - 6, rng, "plane")
+        cv.a[s:s + 3, mz, mx] = I("b:ashlar_pillar", axis="y")
+        cv.a[s + 3, mz, mx] = I("b:gas_lamp")
+        for x, z in ((lx0 + 2, lz0 + 2), (lx1 - 2, lz0 + 2), (lx0 + 2, lz1 - 2), (lx1 - 2, lz1 - 2)):
+            lamp(cv, x, z)
+    # a riverside lawn and the name on the gate
+    cv.signs.append((214 + 2, s + 5, 44, ["", "KHOY", "UNIVERSITY", ""], "white"))
+    cv.a[s + 5, 44, 216] = I("dark_oak_wall_sign", facing="east")
+    marks["university"] = (219, s, 44, 90)
+    for z in range(z0 + 4, z1, 14):
+        lamp(cv, 220, z)
+
+
+# ---------------------------------------------------------------- Iron Cross Market
+
+
+@landmark
+def market(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 480, 184, 528, 225
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "b:tingen_cobbles")
+    roof_y = s + 9
+    # cast-iron columns and an iron-and-glass roof with a raised lantern
+    for x in range(x0, x1 + 1, 6):
+        for z in range(z0, z1 + 1, 6):
+            cv.a[s:roof_y, z, x] = I("polished_blackstone_wall")
+            cv.a[roof_y - 1, z, x] = I("polished_blackstone")
+    for x in range(x0 - 1, x1 + 2):
+        for z in range(z0 - 1, z1 + 2):
+            edge = x in (x0 - 1, x1 + 1) or z in (z0 - 1, z1 + 1)
+            cv.a[roof_y, z, x] = I("polished_deepslate_slab", type="bottom") if edge else (
+                I("polished_deepslate") if (x - x0) % 6 == 0 or (z - z0) % 6 == 0 else I("light_gray_stained_glass"))
+    mz = (z0 + z1) // 2
+    for k in range(1, 5):
+        for x in range(x0 + 2, x1 - 1):
+            for z in (mz - 6 + k, mz + 6 - k):
+                cv.a[roof_y + k, z, x] = I("polished_deepslate_stairs", facing="south" if z < mz else "north")
+        cv.a[roof_y + k, mz - 6 + k + 1:mz + 6 - k, x0 + 2:x1 - 1] = 0
+    cv.a[roof_y + 5, mz - 1:mz + 2, x0 + 2:x1 - 1] = I("polished_deepslate_slab", type="bottom")
+    for x in range(x0 + 2, x1 - 1):
+        cv.a[roof_y + 1:roof_y + 3, mz - 5, x] = I("glass_pane") if False else cv.a[roof_y + 1:roof_y + 3, mz - 5, x]
+    # stalls in rows: counter, awning, goods
+    goods = ["b:crate", "barrel", "hay_block", "melon", "pumpkin", "b:crate", "barrel", "cake", "composter"]
+    for z in range(z0 + 3, z1 - 1, 6):
+        for x in range(x0 + 2, x1 - 1, 5):
+            colour = rng.choice(("red", "green", "blue"))
+            cv.a[s, z, x:x + 3] = I("spruce_slab", type="top")
+            cv.a[s + 2, z - 1, x:x + 3] = I(f"b:{colour}_awning", facing="south")
+            cv.a[s, z + 1, x] = I(rng.choice(goods)); cv.a[s, z + 1, x + 2] = I(rng.choice(goods))
+            cv.a[s + 1, z, x + 1] = I(rng.choice(("flower_pot", "lantern", "candle")) if rng.random() < 0.5 else "air")
+    cv.sign(x0 + 24, roof_y - 1, z1 + 1, S("dark_oak_wall_sign", facing="south"), ["", "IRON CROSS", "MARKET", ""])
+    cv.signs[-1] = cv.signs[-1] + ("yellow",)
+    cv.a[roof_y - 1, z1, x0 + 24] = I("polished_blackstone")
+    marks["market"] = (x0 + 24, s, z1 + 6, 180)
+
+
+# ---------------------------------------------------------------- the workhouse
+
+
+@landmark
+def workhouse(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 600, 291, 639, 336
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "b:tingen_cobbles")
+    st = B.Style(pt.SOOT, pt.COBBLE, pt.SOOT, pt.DEEPTILE, "spruce", "b:weathered_planks", 0.15)
+    front = B.tenement(rng, 40, 12, st, 3)
+    cv.stamp(front, x0, z0, facing="west") if False else cv.stamp(front, x0, z0, facing="north")
+    wing = B.tenement(rng, 34, 11, st, 3)
+    cv.stamp(wing, x0, z0 + 12, facing="west")
+    cv.stamp(B.tenement(rng, 34, 11, st, 3), x1 - 10, z0 + 12, facing="east")
+    # high yard wall with a gate
+    for x in range(x0, x1 + 1):
+        cv.a[s:s + 4, z1, x] = I("b:soot_bricks")
+    cv.a[s:s + 3, z1, x0 + 19:x0 + 22] = 0
+    cv.a[s + 3, z1, x0 + 19:x0 + 22] = I("b:soot_bricks")
+    cv.sign(x0 + 20, s + 4, z1 + 1, S("spruce_wall_sign", facing="south"), ["TINGEN UNION", "WORKHOUSE", "", "Labour Within"])
+
+
+# ---------------------------------------------------------------- Raphael Cemetery
+
+
+@landmark
+def cemetery(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 480, 510, 581, 636
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "grass_block")
+    gx = (x0 + x1) // 2
+    enclose(cv, x0, z0, x1, z1, ((gx, z0),), "b:ashlar_wall", "b:iron_railing", "b:ashlar")
+    # gravel walks
+    for x in range(x0 + 1, x1):
+        for z in range(z0 + 1, z1):
+            if abs(x - gx) <= 1 or (z - z0) % 24 in (0, 1, 2):
+                cv.a[s - 1, z, x] = I("gravel")
+            elif (x - x0) % 30 in (14, 15, 16):
+                cv.a[s - 1, z, x] = I("gravel")
+    # rows of graves facing the walks, yews, the odd mausoleum
+    for z in range(z0 + 4, z1 - 1, 3):
+        for x in range(x0 + 2, x1 - 1, 2):
+            if cv.a[s - 1, z, x] != I("grass_block") or cv.a[s - 1, z + 1, x] != I("grass_block"):
+                continue
+            r = rng.random()
+            if r < 0.62:
+                cv.a[s, z, x] = I("b:gravestone", facing=rng.choice(("north", "north", "south")))
+                if rng.random() < 0.12:
+                    cv.a[s, z + 1, x] = I(rng.choice(("poppy", "wither_rose", "lily_of_the_valley", "candle")))
+            elif r < 0.66:
+                cv.a[s:s + 2, z, x] = I("b:ashlar_wall")
+                cv.a[s + 2, z, x] = I("b:ashlar_slab", type="bottom")
+            elif r < 0.69:
+                cv.a[s, z, x] = I("cobblestone_wall")
+                cv.a[s + 1, z, x] = I("chain")
+    for i in range(16):
+        x = rng.randint(x0 + 3, x1 - 3); z = rng.randint(z0 + 6, z1 - 3)
+        if cv.a[s - 1, z, x] == I("grass_block") and cv.a[s, z, x] == 0:
+            tree(cv, x, s, z, rng, "yew")
+    for mx, mz in ((x0 + 8, z0 + 40), (x1 - 12, z0 + 64), (x0 + 30, z0 + 90), (x1 - 30, z0 + 100)):
+        m = Vol(7, 9, 7)
+        m.fill(0, 0, 0, 6, 4, 6, S("b:ashlar")); m.fill(1, 1, 1, 5, 3, 5, AIR)
+        m.fill(3, 1, 0, 3, 2, 0, S("iron_bars"))
+        m.fill(0, 0, 0, 6, 0, 0, S("b:ashlar_stairs", facing="south")) if False else None
+        m.set(0, 0, 0, S("b:ashlar_pillar", axis="y")); m.set(6, 0, 0, S("b:ashlar_pillar", axis="y"))
+        pt.gable_z(m, 0, 6, 0, 6, 5, pt.ASHLAR)
+        cv.stamp(m, mx, mz, facing="north")
+    # the cemetery chapel by the gate
+    ch = Vol(13, 22, 21)
+    ch.fill(0, 0, 0, 12, 8, 20, S("b:ashlar")); ch.fill(1, 1, 1, 11, 7, 19, AIR)
+    ch.fill(1, 0, 1, 11, 0, 19, S("polished_andesite"))
+    for z in range(3, 19, 4):
+        lancet_z(ch, 0, z, z, 2, 6, pt.POL_DEEP); lancet_z(ch, 12, z, z, 2, 6, pt.POL_DEEP)
+    lancet_x(ch, 5, 7, 20, 2, 6, pt.POL_DEEP)
+    ch.fill(5, 1, 0, 7, 4, 0, AIR); pt.double_door(ch, 5, 1, 1, "dark_oak", "north")
+    steep_gable_z(ch, 0, 12, 0, 20, 9, pt.SLATE, S("b:ashlar"))
+    ch.fill(6, 21 - 1, 0, 6, 21, 0, S("b:ashlar_wall"))
+    for z in range(4, 18, 2):
+        ch.fill(3, 1, z, 4, 1, z, S("dark_oak_stairs", facing="south")); ch.fill(8, 1, z, 9, 1, z, S("dark_oak_stairs", facing="south"))
+    cv.stamp(ch, gx + 8, z0 + 6, facing="west")
+    for z in range(z0 + 3, z1, 16):
+        lamp(cv, gx + 2, z)
+    cv.sign(gx + 2, s + 2, z0 - 1, S("spruce_wall_sign", facing="north"), ["", "RAPHAEL", "CEMETERY", ""])
+    cv.a[s + 2, z0, gx + 2] = I("b:ashlar")
+    marks["cemetery"] = (gx, s, z0 - 4, 0)
+
+
+# ---------------------------------------------------------------- Tingen Gardens
+
+
+@landmark
+def gardens(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 182, 509, 363, 583
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "grass_block")
+    cx, cz = (x0 + x1) // 2, (z0 + z1) // 2
+    enclose(cv, x0, z0, x1, z1, ((cx, z0), (cx, z1), (x0, cz), (x1, cz)), "b:ashlar_wall", "b:iron_railing", "b:ashlar")
+    # an oval walk and two cross walks
+    for x in range(x0 + 1, x1):
+        for z in range(z0 + 1, z1):
+            ex = ((x - cx) / ((x1 - x0) / 2 - 8)) ** 2 + ((z - cz) / ((z1 - z0) / 2 - 8)) ** 2
+            if 0.82 < ex < 1.0 or abs(z - cz) <= 1 or abs(x - cx) <= 1:
+                cv.a[s - 1, z, x] = I("gravel")
+    # the pond with an island
+    for x in range(cx - 40, cx - 12):
+        for z in range(cz - 16, cz + 17):
+            e = ((x - (cx - 26)) / 13) ** 2 + ((z - cz) / 15) ** 2
+            if e <= 1:
+                cv.a[s - 1, z, x] = I("water"); cv.a[s - 2, z, x] = I("water"); cv.a[s - 3, z, x] = I("mud")
+                if e > 0.8:
+                    cv.a[s - 1, z, x] = I("water")
+                if e < 0.06:
+                    cv.a[s - 1, z, x] = I("grass_block"); cv.a[s - 2, z, x] = I("dirt")
+                elif rng.random() < 0.03:
+                    cv.a[s, z, x] = I("lily_pad")
+    tree(cv, cx - 26, s, cz, rng, "birch")
+    # bandstand: octagonal, copper roof
+    bx, bz = cx + 24, cz
+    for x in range(bx - 5, bx + 6):
+        for z in range(bz - 5, bz + 6):
+            d = max(abs(x - bx), abs(z - bz)) + 0.4 * min(abs(x - bx), abs(z - bz))
+            if d <= 6:
+                cv.a[s, z, x] = I("b:ashlar_slab", type="top") if d <= 5.5 else 0
+    for x, z in ((bx - 4, bz - 2), (bx - 4, bz + 2), (bx + 4, bz - 2), (bx + 4, bz + 2), (bx - 2, bz - 4), (bx + 2, bz - 4), (bx - 2, bz + 4), (bx + 2, bz + 4)):
+        cv.a[s + 1:s + 5, z, x] = I("polished_blackstone_wall")
+    for k in range(5):
+        r = 5.5 - k * 1.2
+        for x in range(bx - 6, bx + 7):
+            for z in range(bz - 6, bz + 7):
+                d = max(abs(x - bx), abs(z - bz)) + 0.4 * min(abs(x - bx), abs(z - bz))
+                if r - 1.3 < d <= r:
+                    cv.a[s + 5 + k, z, x] = I("waxed_oxidized_cut_copper")
+    cv.a[s + 10, bz, bx] = I("lightning_rod")
+    cv.a[s + 4, bz, bx] = I("lantern", hanging="true")
+    # trees, flower beds, benches and lamps
+    for i in range(70):
+        x = rng.randint(x0 + 3, x1 - 3); z = rng.randint(z0 + 3, z1 - 3)
+        if cv.a[s - 1, z, x] == I("grass_block") and (cv.a[s - 1, z - 2:z + 3, x - 2:x + 3] == I("grass_block")).all() and cv.a[s, z, x] == 0:
+            tree(cv, x, s, z, rng, rng.choice(("plane", "oak", "birch", "dark")))
+    for i in range(160):
+        x = rng.randint(x0 + 2, x1 - 2); z = rng.randint(z0 + 2, z1 - 2)
+        if cv.a[s - 1, z, x] == I("grass_block") and cv.a[s, z, x] == 0:
+            cv.a[s, z, x] = I(rng.choice(("poppy", "dandelion", "azure_bluet", "oxeye_daisy", "cornflower", "allium", "short_grass", "fern")))
+    for x in range(x0 + 6, x1, 10):
+        if cv.a[s - 1, cz + 2, x] == I("grass_block"):
+            bench(cv, x, cz + 2, "south")
+        if x % 20 < 10:
+            lamp(cv, x, cz - 2) if cv.a[s - 1, cz - 2, x] != I("water") else None
+    marks["gardens"] = (cx, s, z0 - 3, 0)
+
+
+# ---------------------------------------------------------------- Golden Indus: the opera and the bank
+
+
+@landmark
+def golden_indus(g, cv, rng, marks):
+    s = cv.street
+    op = classical(rng, 50, 40, 3, 6, "Tingen Opera House", dome=True, lit=0.6, arched=True)
+    cv.stamp(op, 302, 353, facing="north")
+    reserve(g, 302, 353, 302 + op.w - 1, 353 + op.d - 1)
+    ground(g, cv, 302, 353, 302 + op.w - 1, 353 + op.d - 1, "polished_andesite", clear=False)
+    bk = classical(rng, 40, 34, 3, 5, "Loen Commercial Bank", roof=pt.COPPER, lit=0.4)
+    cv.stamp(bk, 423, 353, facing="north")
+    reserve(g, 423, 353, 423 + bk.w - 1, 353 + bk.d - 1)
+    marks["golden"] = (400, s, 360, 180)
+    marks["opera"] = (327, s, 352, 180)
+
+
+# ---------------------------------------------------------------- Tingen University (south bank)
+
+
+@landmark
+def tingen_university(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 6, 512, 100, 584
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "grass_block")
+    wall, trim, roof = pt.ASHLAR, pt.POL_DEEP, pt.COPPER
+    dd = 11
+    main = college_range(rng, x1 - x0 + 1, dd, 3, wall, trim, roof)
+    cv.stamp(main, x0, z0, facing="north")
+    cv.stamp(college_range(rng, z1 - z0 + 1 - dd, dd, 3, wall, trim, roof), x0, z0 + dd, facing="east")
+    cv.stamp(college_range(rng, z1 - z0 + 1 - dd, dd, 3, wall, trim, roof), x1 - dd + 1, z0 + dd, facing="west")
+    gt = gate_tower(rng, 11, 13, 26, wall, trim, roof)
+    cv.stamp(gt, (x0 + x1) // 2 - 5, z0 - 1, facing="north")
+    for x in range(x0 + dd + 3, x1 - dd - 2, 9):
+        for z in range(z0 + dd + 4, z1 - 2, 9):
+            tree(cv, x, s, z, rng, "plane")
+    cv.sign((x0 + x1) // 2, s + 6, z0 - 2, S("dark_oak_wall_sign", facing="north"), ["", "TINGEN", "UNIVERSITY", ""])
+    cv.signs[-1] = cv.signs[-1] + ("white",)
+    marks["tingen_university"] = ((x0 + x1) // 2, s, z0 - 6, 0)
+
+
+# ---------------------------------------------------------------- gasworks
+
+
+@landmark
+def gasworks(g, cv, rng, marks):
+    s = cv.street
+    x0, z0, x1, z1 = 600, 510, 639, 584
+    reserve(g, x0, z0, x1, z1)
+    ground(g, cv, x0, z0, x1, z1, "b:tingen_cobbles")
+    for gx, gz, r, h in ((619, 530, 11, 22), (619, 563, 10, 18)):
+        for x in range(gx - r - 1, gx + r + 2):
+            for z in range(gz - r - 1, gz + r + 2):
+                d = ((x - gx) ** 2 + (z - gz) ** 2) ** 0.5
+                if d <= r - 1:
+                    cv.a[s:s + h - 3, z, x] = I("b:red_bricks") if False else 0
+                    cv.a[s + h - 4, z, x] = I("polished_deepslate_slab", type="bottom")
+                if r - 2 < d <= r - 1:
+                    cv.a[s:s + h - 4, z, x] = I("gray_terracotta")
+                    if (s + h) % 3 == 0:
+                        pass
+        # guide frame: columns round the tank tied by girders
+        for k in range(12):
+            a = k * 3.14159 * 2 / 12
+            x = int(round(gx + r * 0.98 * __import__("math").cos(a))); z = int(round(gz + r * 0.98 * __import__("math").sin(a)))
+            cv.a[s:s + h, z, x] = I("polished_blackstone_wall")
+        for y in (s + 7, s + 14, s + h - 1):
+            for k in range(72):
+                a = k * 3.14159 * 2 / 72
+                x = int(round(gx + r * __import__("math").cos(a))); z = int(round(gz + r * __import__("math").sin(a)))
+                if cv.a[y, z, x] == 0:
+                    cv.a[y, z, x] = I("polished_blackstone_slab", type="top")
+    # coal heaps
+    for i in range(6):
+        hx, hz = rng.randint(x0 + 2, x0 + 8), rng.randint(z0 + 2, z1 - 2)
+        for dx in range(-2, 3):
+            for dz in range(-2, 3):
+                hgt = 2 - max(abs(dx), abs(dz))
+                if hgt >= 0 and 0 <= hz + dz < cv.d:
+                    cv.a[s:s + hgt + 1, hz + dz, hx + dx] = I("coal_block")
+    enclose(cv, x0, z0, x1, z1, ((x0, (z0 + z1) // 2),), "b:soot_brick_wall", "b:iron_railing", "b:soot_bricks")
+
+
+# ---------------------------------------------------------------- docks on the Tussock
+
+
+@landmark
+def docks(g, cv, rng, marks):
+    """Timber jetties out into the river below Lower Ward Street, with cranes and cargo."""
+    s = cv.street
+    from terrain import WATER_TOP
+    for jx in range(500, 636, 18):
+        # find the bank: first water cell going south
+        zw = None
+        for z in range(430, 500):
+            if g.water[z, jx]:
+                zw = z
+                break
+        if zw is None:
+            continue
+        for z in range(zw - 3, zw + 9):
+            for x in range(jx, jx + 5):
+                if g.wall[z, x] or g.water[z, x]:
+                    cv.a[s - 1, z, x] = I("spruce_planks")
+                    cv.a[s:s + 2, z, x] = 0
+                    if (x - jx) in (0, 4) and (z - zw) % 4 == 0 and g.water[z, x]:
+                        cv.a[s - 11:s - 1, z, x] = I("spruce_log", axis="y")
+        # bollards, cargo and a crane at the head
+        cv.a[s, zw + 8, jx] = I("b:ashlar_wall") if False else I("spruce_fence")
+        cv.a[s, zw + 8, jx + 4] = I("spruce_fence")
+        for z in range(zw, zw + 6, 2):
+            cv.a[s, z, jx + rng.choice((0, 4))] = I(rng.choice(("b:crate", "barrel", "b:crate", "hay_block")))
+        cv.a[s:s + 8, zw + 6, jx + 2] = I("b:dark_timber", axis="y")
+        for k in range(1, 5):
+            cv.a[s + 8, zw + 6 + k, jx + 2] = I("b:dark_timber", axis="z")
+        cv.a[s + 5:s + 8, zw + 10, jx + 2] = I("chain")
+        cv.a[s + 4, zw + 10, jx + 2] = I("b:crate")
+    marks["docks"] = (560, s, 430, 180)
+
+
+# ---------------------------------------------------------------- the works north of the canal
+
+
+@landmark
+def works(g, cv, rng, marks):
+    """Mills and foundries with tall chimneys, facing Canal Street and Foundry Street."""
+    lots = [(543, 86, 38, 30, "south"), (600, 86, 39, 30, "south"), (543, 63, 38, 20, "north"),
+            (262, 60, 34, 26, "east"), (262, 8, 34, 30, "east")]
+    for x, z, w, d, face in lots:
+        st = B.style(rng, rng.choice(("red", "soot", "vbrick")))
+        if face in ("north", "south"):
+            v = B.factory(rng, w, d, st)
+            fx, fz = x, z
+            fw, fd = w, d
+        else:
+            v = B.factory(rng, d, w, st)
+            fx, fz = x, z
+            fw, fd = w, d
+        if not g.free[fz:fz + fd, fx:fx + fw].all():
+            continue
+        cv.stamp(v, fx, fz, facing=face)
+        reserve(g, fx, fz, fx + fw - 1, fz + fd - 1)
