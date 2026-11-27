@@ -4,9 +4,15 @@ import io.github.n252g2.beyonder.Beyonder;
 import io.github.n252g2.beyonder.block.ApothecaryBenchBlock;
 import io.github.n252g2.beyonder.brewing.Formula;
 import io.github.n252g2.beyonder.item.CoinItem;
+import io.github.n252g2.beyonder.item.CrimsonGreatswordItem;
+import io.github.n252g2.beyonder.item.DeathKnellItem;
 import io.github.n252g2.beyonder.item.FormulaItem;
 import io.github.n252g2.beyonder.item.LoreItem;
 import io.github.n252g2.beyonder.item.RevolverItem;
+import io.github.n252g2.beyonder.item.StaffItem;
+import io.github.n252g2.beyonder.item.SwordCaneItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.Tiers;
 import java.util.List;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -63,6 +69,21 @@ public final class BeyonderContent {
     public static final DeferredItem<LoreItem> SILVER_ROUND = Beyonder.ITEMS.registerItem("silver_round",
             LoreItem::new, new Item.Properties().stacksTo(64).rarity(Rarity.UNCOMMON));
 
+    public static final DeferredItem<DeathKnellItem> DEATH_KNELL = Beyonder.ITEMS.registerItem("death_knell",
+            DeathKnellItem::new, new Item.Properties().stacksTo(1).durability(1200).rarity(Rarity.EPIC));
+
+    // ------------------------------------------------------------------ blades and staves
+
+    public static final DeferredItem<SwordItem> LONGSWORD = Beyonder.ITEMS.registerItem("longsword",
+            p -> new SwordItem(Tiers.IRON, p.attributes(SwordItem.createAttributes(Tiers.IRON, 4, -2.6F))),
+            new Item.Properties());
+    public static final DeferredItem<SwordCaneItem> SWORD_CANE = Beyonder.ITEMS.registerItem("sword_cane",
+            SwordCaneItem::new, new Item.Properties());
+    public static final DeferredItem<CrimsonGreatswordItem> CRIMSON_GREATSWORD = Beyonder.ITEMS.registerItem("crimson_greatsword",
+            CrimsonGreatswordItem::new, new Item.Properties().rarity(Rarity.RARE).fireResistant());
+    public static final DeferredItem<StaffItem> CRESCENT_STAFF = Beyonder.ITEMS.registerItem("crescent_staff",
+            StaffItem::new, new Item.Properties().stacksTo(1).durability(500).rarity(Rarity.UNCOMMON));
+
     // ------------------------------------------------------------------ blocks
 
     public static final DeferredBlock<ApothecaryBenchBlock> APOTHECARY_BENCH = Beyonder.BLOCKS.registerBlock(
@@ -99,7 +120,8 @@ public final class BeyonderContent {
                 SEER_FORMULA, CLOWN_FORMULA, MAGICIAN_FORMULA,
                 STARLIT_LAVENDER, DREAM_MOSS, WRAITH_ASH, SHADOW_SILK, PHANTOM_EYE, MIRROR_SHARD, CRIMSON_SPORE,
                 COPPER_PENNY, SILVER_SOLI, GOLD_POUND,
-                REVOLVER, REVOLVER_ROUND, SILVER_ROUND);
+                REVOLVER, DEATH_KNELL, REVOLVER_ROUND, SILVER_ROUND,
+                LONGSWORD, SWORD_CANE, CRIMSON_GREATSWORD, CRESCENT_STAFF);
     }
 
     /** Loads this class so its entries join the registers before they fire. */

@@ -70,5 +70,10 @@
   "item.beyonder.revolver_round": "Revolver Round",
   "item.beyonder.revolver_round.desc": "Brass-cased. Load it by sneak-using a revolver.",
   "item.beyonder.silver_round": "Silver Round",
-  "item.beyonder.silver_round.desc": "Blessed silver. Deals heavy extra damage to the undead."
+  "item.beyonder.silver_round.desc": "Blessed silver. Deals heavy extra damage to the undead.",
+  "item.beyonder.death_knell": "Death Knell",
+  "item.beyonder.longsword": "Longsword",
+  "item.beyonder.sword_cane": "Sword Cane",
+  "item.beyonder.crimson_greatsword": "Crimson Greatsword",
+  "item.beyonder.crescent_staff": "Crescent Staff"
 }

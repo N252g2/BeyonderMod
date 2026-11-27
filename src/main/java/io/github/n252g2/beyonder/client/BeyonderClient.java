@@ -27,6 +27,7 @@ public class BeyonderClient {
         modBus.addListener(BeyonderClient::onRegisterReloadListeners);
         modBus.addListener(BeyonderClient::onRegisterGuiLayers);
         modBus.addListener(BeyonderClient::onRegisterExtensions);
+        modBus.addListener(BeyonderClient::onClientSetup);
 
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onRenderFog);
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onFogColor);
@@ -60,8 +61,15 @@ public class BeyonderClient {
         event.registerAboveAll(Beyonder.id("gun_hud"), GunClient::renderHud);
     }
 
+    private static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {
+        // The sword cane swaps to its drawn-blade model.
+        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(BeyonderContent.SWORD_CANE.get(),
+                Beyonder.id("drawn"), (stack, level, entity, seed) ->
+                        io.github.n252g2.beyonder.item.SwordCaneItem.isDrawn(stack) ? 1.0F : 0.0F));
+    }
+
     private static void onRegisterExtensions(RegisterClientExtensionsEvent event) {
-        event.registerItem(GunClient.EXTENSIONS, BeyonderContent.REVOLVER.get());
+        event.registerItem(GunClient.EXTENSIONS, BeyonderContent.REVOLVER.get(), BeyonderContent.DEATH_KNELL.get());
     }
 
     private static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {

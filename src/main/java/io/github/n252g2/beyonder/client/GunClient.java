@@ -34,7 +34,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public final class GunClient {
     // Display scale of the first-person model (see models/item/revolver.json).
-    private static final float SCALE = 0.6F;
+    private static final float SCALE = 0.55F;
     // Where the gun's centre sits, in view space (x right, y up, -z forward).
     private static final float HIP_X = 0.34F, HIP_Y = -0.27F, HIP_Z = -0.78F;
     // When aiming, the sight line (model y = 11.25/16) lands exactly on the screen centre.
@@ -44,7 +44,7 @@ public final class GunClient {
     private static float aim, prevAim;
     private static float recoil, prevRecoil;
     private static int reloadTicks;
-    private static final int RELOAD_ANIM = RevolverItem.RELOAD_TICKS;
+    private static int reloadAnim = RevolverItem.RELOAD_TICKS;
 
     private GunClient() {}
 
@@ -99,7 +99,7 @@ public final class GunClient {
         }
         boolean aiming = RevolverItem.isAiming(player);
         recoil = 1.0F;
-        float kick = RevolverItem.kick(aiming);
+        float kick = RevolverItem.kick(stack, aiming);
         player.setXRot(player.getXRot() - kick);
         player.setYRot(player.getYRot() + (player.getRandom().nextFloat() - 0.5F) * kick * 0.5F);
         PacketDistributor.sendToServer(new GunActionPayload(GunActionPayload.FIRE));
@@ -111,7 +111,7 @@ public final class GunClient {
         if (reloadTicks > 0 || player.getCooldowns().isOnCooldown(stack.getItem())) {
             return;
         }
-        if (RevolverItem.cylinder(stack).length() >= RevolverItem.CAPACITY) {
+        if (RevolverItem.cylinder(stack).length() >= RevolverItem.stats(stack).capacity()) {
             player.displayClientMessage(Component.literal("The cylinder is full.").withStyle(ChatFormatting.GRAY), true);
             return;
         }
@@ -119,7 +119,8 @@ public final class GunClient {
             player.displayClientMessage(Component.literal("You have no rounds.").withStyle(ChatFormatting.GRAY), true);
             return;
         }
-        reloadTicks = RELOAD_ANIM;
+        reloadAnim = RevolverItem.stats(stack).reloadTicks();
+        reloadTicks = reloadAnim;
         PacketDistributor.sendToServer(new GunActionPayload(GunActionPayload.RELOAD));
     }
 
@@ -157,7 +158,8 @@ public final class GunClient {
         int y = h - 30;
         g.fill(x - 4, y - 4, x + 88, y + 22, 0xA0100E14);
         g.fill(x - 4, y - 4, x + 88, y - 3, 0xFF8A7140);
-        for (int i = 0; i < RevolverItem.CAPACITY; i++) {
+        int capacity = RevolverItem.stats(stack).capacity();
+        for (int i = 0; i < capacity; i++) {
             int cx = x + 2 + i * 9;
             int color = i < cylinder.length() ? (cylinder.charAt(i) == 'S' ? 0xFFE6ECF4 : 0xFFD8B25A) : 0xFF2A2430;
             g.fill(cx, y + 2, cx + 6, y + 12, 0xFF0C0A10);
@@ -170,7 +172,7 @@ public final class GunClient {
         String count = cylinder.length() + " / " + RevolverItem.reserve(mc.player);
         g.drawString(font, count, x + 58, y + 4, cylinder.isEmpty() ? 0xFFB3202C : 0xFFE6DCC6, true);
         if (reloadTicks > 0) {
-            float p = 1.0F - reloadTicks / (float) RELOAD_ANIM;
+            float p = 1.0F - reloadTicks / (float) reloadAnim;
             g.fill(x - 4, y + 18, x - 4 + (int) (92 * p), y + 20, 0xFFD8B25A);
         }
     }
@@ -191,7 +193,7 @@ public final class GunClient {
             float r = Mth.lerp(partialTick, prevRecoil, recoil);
             float reload = 0.0F;
             if (reloadTicks > 0 && arm == player.getMainArm()) {
-                float p = 1.0F - (reloadTicks - partialTick) / RELOAD_ANIM;
+                float p = 1.0F - (reloadTicks - partialTick) / reloadAnim;
                 reload = Mth.sin(Mth.clamp(p, 0.0F, 1.0F) * Mth.PI);
             }
 

@@ -332,7 +332,11 @@ public final class Beyonders {
                 act(player, 9, 0.25F); // observing with Spirit Vision is a Seer's act
             }
         } else if (d.spirituality() < d.maxSpirituality()) {
-            d.setSpirituality(d.spirituality() + Pathway.regenPerSecond(d.sequence()));
+            float regen = Pathway.regenPerSecond(d.sequence());
+            if (player.getMainHandItem().getItem() instanceof io.github.n252g2.beyonder.item.StaffItem) {
+                regen *= 1.5F; // the crescent staff gathers spirit
+            }
+            d.setSpirituality(d.spirituality() + regen);
             changed = true;
         }
 

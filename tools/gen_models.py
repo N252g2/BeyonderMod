@@ -1,27 +1,37 @@
 """Builds Beyonder's 3D item models (Blockbench-style element models) as JSON.
 
 Run from the repo root:  python3 tools/gen_models.py
-Model space is 16 units per block. Guns are built with the barrel pointing north (-Z) and the top
-of the gun up (+Y), so first person needs no rotation: the in-hand placement is done in code
-(GunClient), and third person uses the two-handed crossbow stance.
+
+Conventions
+- 16 units per block; elements may run from -16 to 32.
+- Guns: barrel pointing north (-Z), top of the gun up (+Y). First-person placement is done in code
+  (GunClient), so their first-person display only sets the scale. Every gun keeps its sight line at
+  y = 11.25 so aiming lines up for all of them.
+- Melee weapons: built standing up, tip at +Y, blade flat facing +Z, and the grip point given to
+  `melee_display`, which works out transforms that put the grip where vanilla puts a sword's grip.
+All designs are original.
 """
 import json
+import math
 import os
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "src", "main", "resources", "assets", "beyonder")
 
+
+# ---------------------------------------------------------------- element helpers
 
 def face_uvs(frm, to):
     x1, y1, z1 = frm
     x2, y2, z2 = to
 
     def fix(u):
-        u = [max(0.0, min(16.0, v)) for v in u]
+        u = [round(max(0.0, min(16.0, v)), 3) for v in u]
         if u[0] == u[2]:
             u[2] = min(16.0, u[0] + 0.5)
         if u[1] == u[3]:
             u[3] = min(16.0, u[1] + 0.5)
         return u
+
     return {
         "north": fix([16 - x2, 16 - y2, 16 - x1, 16 - y1]),
         "south": fix([x1, 16 - y2, x2, 16 - y1]),
@@ -32,94 +42,360 @@ def face_uvs(frm, to):
     }
 
 
-def box(name, frm, to, tex, rotation=None, faces=None):
+def box(name, frm, to, tex, rotation=None, faces=None, glow=False):
+    frm = [round(v, 3) for v in frm]
+    to = [round(v, 3) for v in to]
     uvs = face_uvs(frm, to)
+    # Faces outside the 0..16 texture square (long elements): map them across the whole texture.
+    for f in uvs:
+        u = uvs[f]
+        if u[2] - u[0] <= 0 or u[3] - u[1] <= 0:
+            uvs[f] = [0, 0, 16, 16]
     tex_for = (lambda f: faces.get(f, tex)) if faces else (lambda f: tex)
     el = {"name": name, "from": frm, "to": to,
           "faces": {f: {"uv": uv, "texture": tex_for(f)} for f, uv in uvs.items()}}
     if rotation:
         el["rotation"] = rotation
+    if glow:
+        el["neoforge_data"] = {"block_light": 15, "sky_light": 15}
     return el
 
 
-def revolver():
-    S, D, W, C, B = "#steel", "#dark", "#wood", "#cylinder", "#brass"
-    els = [
-        # barrel and its top rib, front sight
-        box("barrel", [7.25, 9.0, 0.5], [8.75, 10.5, 9.0], S, faces={"north": D}),
-        box("bore", [7.6, 9.35, 0.4], [8.4, 10.15, 0.5], D),
-        box("rib", [7.6, 10.5, 0.7], [8.4, 10.8, 9.0], S),
-        box("front_sight", [7.8, 10.8, 0.8], [8.2, 11.25, 1.8], B),
-        box("ejector_rod", [7.6, 8.3, 3.0], [8.4, 9.0, 9.0], D),
-        box("ejector_head", [7.45, 8.2, 2.7], [8.55, 9.05, 3.3], S),
-        # cylinder with its frame window
-        box("cylinder", [6.6, 7.8, 9.0], [9.4, 10.8, 12.2], C, faces={"north": D, "south": D}),
-        box("frame_top", [7.0, 10.9, 8.6], [9.0, 11.25, 13.2], S),
-        # top-break latch: its two brass ears form the rear sight notch
-        box("latch_l", [6.8, 10.9, 12.3], [7.65, 11.6, 13.4], B),
-        box("latch_r", [8.35, 10.9, 12.3], [9.2, 11.6, 13.4], B),
-        # brass bands at both ends of the cylinder
-        box("band_front", [6.5, 7.7, 9.0], [9.5, 10.9, 9.35], B),
-        box("band_back", [6.5, 7.7, 11.85], [9.5, 10.9, 12.2], B),
-        box("barrel_lug", [7.1, 8.1, 7.4], [8.9, 9.1, 9.0], S),
-        box("frame_bottom", [7.0, 7.2, 8.6], [9.0, 7.7, 12.6], S),
-        box("frame_front", [7.0, 7.2, 8.4], [9.0, 10.9, 9.0], S),
-        box("recoil_shield", [6.9, 7.2, 12.2], [9.1, 11.0, 13.6], S),
-        box("backstrap", [7.2, 6.8, 13.5], [8.8, 10.7, 14.4], S),
-        box("hammer", [7.55, 10.4, 13.4], [8.45, 11.1, 14.4], D),
-        box("hammer_spur", [7.55, 10.7, 14.3], [8.45, 11.15, 15.2], D),
-        # trigger and guard
-        box("trigger", [7.75, 6.0, 11.0], [8.25, 7.2, 11.5], B),
-        box("guard_front", [7.65, 5.6, 10.0], [8.35, 7.2, 10.5], S),
-        box("guard_bottom", [7.65, 5.4, 10.0], [8.35, 5.9, 12.8], S),
-        box("guard_back", [7.65, 5.4, 12.4], [8.35, 7.2, 12.9], S),
-        # grip frame and walnut grips, raked back
-        box("grip_frame", [7.3, 1.8, 12.4], [8.7, 7.4, 14.6], S,
-            rotation={"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}),
-        box("grip_wood", [6.8, 2.2, 12.6], [9.2, 7.2, 14.4], W,
-            rotation={"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}),
-        box("butt_cap", [7.1, 1.5, 12.5], [8.9, 2.1, 14.5], B,
-            rotation={"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}),
-        box("lanyard_ring", [7.75, 0.6, 13.2], [8.25, 1.5, 14.0], B,
-            rotation={"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}),
-    ]
-    # centre the gun front to back (it spans about z 0.4..15.2 as built)
+def shift(els, dx=0.0, dy=0.0, dz=0.0):
     for el in els:
-        el["from"][2] += 0.2
-        el["to"][2] += 0.2
+        for k in ("from", "to"):
+            el[k] = [round(el[k][0] + dx, 3), round(el[k][1] + dy, 3), round(el[k][2] + dz, 3)]
         if "rotation" in el:
-            el["rotation"]["origin"][2] += 0.2
-    display = {
-        "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6]},
-        "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6]},
-        # two-handed stance: the grip (about 3.5 below and 6 behind the centre) sits in the hand
-        "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 2.2, -3.4], "scale": [0.6, 0.6, 0.6]},
-        "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 2.2, -3.4], "scale": [0.6, 0.6, 0.6]},
-        "gui": {"rotation": [12, -90, 0], "translation": [1.2, 1.4, 0], "scale": [0.92, 0.92, 0.92]},
-        "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
-        "fixed": {"rotation": [0, -90, 0], "translation": [0, 1, 0], "scale": [0.9, 0.9, 0.9]},
-        "head": {"rotation": [0, 0, 0], "translation": [0, 6, 0], "scale": [0.8, 0.8, 0.8]},
-    }
-    model = {
-        "credit": "Beyonder: original model, generated by tools/gen_models.py",
-        "gui_light": "side",
-        "textures": {
-            "particle": "beyonder:item/gun/steel",
-            "steel": "beyonder:item/gun/steel",
-            "dark": "beyonder:item/gun/dark",
-            "wood": "beyonder:item/gun/walnut",
-            "cylinder": "beyonder:item/gun/cylinder",
-            "brass": "beyonder:item/gun/brass",
-        },
-        "elements": els,
-        "display": display,
-    }
-    path = os.path.join(ROOT, "models", "item", "revolver.json")
+            o = el["rotation"]["origin"]
+            el["rotation"]["origin"] = [round(o[0] + dx, 3), round(o[1] + dy, 3), round(o[2] + dz, 3)]
+    return els
+
+
+def center_z(els):
+    lo = min(el["from"][2] for el in els)
+    hi = max(el["to"][2] for el in els)
+    return shift(els, dz=8.0 - (lo + hi) / 2.0)
+
+
+def write(name, textures, els, display, gui_light="side", overrides=None, parent=None):
+    model = {"credit": "Beyonder: original model, generated by tools/gen_models.py", "gui_light": gui_light,
+             "textures": textures, "elements": els, "display": display}
+    if overrides:
+        model["overrides"] = overrides
+    path = os.path.join(ROOT, "models", "item", name + ".json")
     with open(path, "w") as f:
         json.dump(model, f, indent=1)
         f.write("\n")
 
 
+# ---------------------------------------------------------------- display maths
+
+def rot_xyz(rx, ry, rz):
+    def rx_(a):
+        c, s = math.cos(a), math.sin(a)
+        return [[1, 0, 0], [0, c, -s], [0, s, c]]
+
+    def ry_(a):
+        c, s = math.cos(a), math.sin(a)
+        return [[c, 0, s], [0, 1, 0], [-s, 0, c]]
+
+    def rz_(a):
+        c, s = math.cos(a), math.sin(a)
+        return [[c, -s, 0], [s, c, 0], [0, 0, 1]]
+
+    def mul(a, b):
+        return [[sum(a[i][k] * b[k][j] for k in range(3)) for j in range(3)] for i in range(3)]
+    return mul(mul(rx_(math.radians(rx)), ry_(math.radians(ry))), rz_(math.radians(rz)))
+
+
+def apply(m, v):
+    return [sum(m[i][k] * v[k] for k in range(3)) for i in range(3)]
+
+
+def place(rotation, scale, grip, target):
+    """Translation (display units) that puts model point `grip` at `target` after rotation and scale."""
+    g = [grip[0] - 8, grip[1] - 8, grip[2] - 8]
+    r = apply(rot_xyz(*rotation), g)
+    return [round(target[i] - r[i] * scale, 3) for i in range(3)]
+
+
+# Where vanilla's handheld sword puts its grip (sprite pixel (3, 3)), worked out from its transforms.
+def vanilla_grip(rotation, translation, scale):
+    g = [3 - 8, 3 - 8, 0]
+    r = apply(rot_xyz(*rotation), g)
+    return [translation[i] + r[i] * scale for i in range(3)]
+
+
+FP_GRIP = vanilla_grip([0, -90, 25], [1.13, 3.2, 1.13], 0.68)
+TP_GRIP = vanilla_grip([0, -90, 55], [0, 4.0, 0.5], 0.85)
+
+
+def melee_display(grip, length, fp_scale=0.68, tp_scale=0.85, gui_scale=None, els=None):
+    """Display transforms for an upright weapon of `length` units whose hand goes at `grip`."""
+    fp_rot = [20, 90, 0]     # tip up and a little away, flat towards the screen centre
+    tp_rot = [-10, 90, 0]    # pointing forward from the hand, like a vanilla sword
+    gui_rot = [0, 0, -45]    # the classic diagonal, tip to the top right
+    gs = gui_scale or round(min(1.0, 20.0 / length), 3)
+    mid = 8.0 - centre_y(els) if els else 8.0
+    gui_t = place(gui_rot, gs, [8, mid, 8], [0, 0, 0])
+    return {
+        "firstperson_righthand": {"rotation": fp_rot, "translation": place(fp_rot, fp_scale, grip, FP_GRIP),
+                                  "scale": [fp_scale] * 3},
+        "firstperson_lefthand": {"rotation": fp_rot, "translation": place(fp_rot, fp_scale, grip, FP_GRIP),
+                                 "scale": [fp_scale] * 3},
+        "thirdperson_righthand": {"rotation": tp_rot, "translation": place(tp_rot, tp_scale, grip, TP_GRIP),
+                                  "scale": [tp_scale] * 3},
+        "thirdperson_lefthand": {"rotation": tp_rot, "translation": place(tp_rot, tp_scale, grip, TP_GRIP),
+                                 "scale": [tp_scale] * 3},
+        "gui": {"rotation": gui_rot, "translation": gui_t, "scale": [gs] * 3},
+        "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [round(gs * 0.6, 3)] * 3},
+        "fixed": {"rotation": [0, 0, -45], "translation": gui_t, "scale": [gs] * 3},
+    }
+
+
+def centre_y(els):
+    lo = min(el["from"][1] for el in els)
+    hi = max(el["to"][1] for el in els)
+    return 8.0 - (lo + hi) / 2.0
+
+
+# ---------------------------------------------------------------- guns
+
+GUN_DISPLAY = {
+    "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.55, 0.55, 0.55]},
+    "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.55, 0.55, 0.55]},
+    # two-handed stance: the grip (about 3.5 below and 6.5 behind the centre) sits in the hand
+    "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 2.1, -3.6], "scale": [0.6, 0.6, 0.6]},
+    "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 2.1, -3.6], "scale": [0.6, 0.6, 0.6]},
+    "gui": {"rotation": [12, -90, 0], "translation": [0, 1.4, 0], "scale": [0.68, 0.68, 0.68]},
+    "ground": {"rotation": [0, 0, 0], "translation": [0, 2, 0], "scale": [0.5, 0.5, 0.5]},
+    "fixed": {"rotation": [0, -90, 0], "translation": [0, 1, 0], "scale": [0.85, 0.85, 0.85]},
+    "head": {"rotation": [0, 0, 0], "translation": [0, 6, 0], "scale": [0.8, 0.8, 0.8]},
+}
+
+
+def revolver():
+    """A long, slim Victorian revolver: dark iron with silver filigree and silver fittings."""
+    S, D, W, C, A = "#steel", "#dark", "#wood", "#cylinder", "#silver"
+    rake = {"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}
+    els = [
+        box("barrel", [7.4, 9.1, -2.5], [8.6, 10.3, 9.0], S, faces={"north": D}),
+        box("bore", [7.7, 9.4, -2.6], [8.3, 10.0, -2.5], D),
+        box("muzzle_ring", [7.3, 9.0, -2.5], [8.7, 10.4, -1.7], A),
+        box("rib", [7.7, 10.3, -2.2], [8.3, 10.75, 9.0], S),
+        box("front_sight", [7.85, 10.75, -2.0], [8.15, 11.25, -1.0], A),
+        box("ejector_rod", [7.7, 8.4, 1.5], [8.3, 9.1, 9.0], D),
+        box("ejector_head", [7.55, 8.3, 1.2], [8.45, 9.15, 1.8], A),
+        box("barrel_lug", [7.2, 8.2, 7.4], [8.8, 9.1, 9.0], S),
+        box("cylinder", [6.7, 7.8, 9.0], [9.3, 10.6, 12.2], C, faces={"north": D, "south": D}),
+        box("band_front", [6.6, 7.7, 9.0], [9.4, 10.7, 9.3], A),
+        box("band_back", [6.6, 7.7, 11.9], [9.4, 10.7, 12.2], A),
+        box("frame_top", [7.1, 10.7, 8.6], [8.9, 11.0, 13.2], S),
+        box("latch_l", [6.9, 10.75, 12.3], [7.65, 11.5, 13.4], A),
+        box("latch_r", [8.35, 10.75, 12.3], [9.1, 11.5, 13.4], A),
+        box("frame_bottom", [7.1, 7.2, 8.6], [8.9, 7.8, 12.6], S),
+        box("frame_front", [7.1, 7.2, 8.4], [8.9, 10.7, 9.0], S),
+        box("recoil_shield", [7.0, 7.2, 12.2], [9.0, 10.9, 13.6], S),
+        box("backstrap", [7.25, 6.8, 13.5], [8.75, 10.6, 14.4], S),
+        box("hammer", [7.6, 10.4, 13.4], [8.4, 11.05, 14.4], D),
+        box("hammer_spur", [7.6, 10.7, 14.3], [8.4, 11.1, 15.2], D),
+        box("trigger", [7.8, 6.0, 11.0], [8.2, 7.2, 11.5], A),
+        box("guard_front", [7.7, 5.6, 10.0], [8.3, 7.2, 10.5], A),
+        box("guard_bottom", [7.7, 5.4, 10.0], [8.3, 5.9, 12.8], A),
+        box("guard_back", [7.7, 5.4, 12.4], [8.3, 7.2, 12.9], A),
+        box("grip_frame", [7.35, 1.8, 12.4], [8.65, 7.4, 14.6], S, rotation=dict(rake)),
+        box("grip_wood", [6.9, 2.2, 12.6], [9.1, 7.2, 14.4], W, rotation=dict(rake)),
+        box("butt_cap", [7.15, 1.4, 12.4], [8.85, 2.1, 14.7], A, rotation=dict(rake)),
+    ]
+    write("revolver", {
+        "particle": "beyonder:item/gun/steel", "steel": "beyonder:item/gun/steel", "dark": "beyonder:item/gun/dark",
+        "wood": "beyonder:item/gun/ebony", "cylinder": "beyonder:item/gun/cylinder", "silver": "beyonder:item/gun/silver",
+    }, center_z(els), GUN_DISPLAY)
+
+
+def death_knell():
+    """Sealed Artifact: an iron-black revolver with a long, heavy barrel and a leather-wrapped grip."""
+    I, D, L, C, A = "#iron", "#dark", "#leather", "#cylinder", "#silver"
+    rake = {"angle": -22.5, "axis": "x", "origin": [8, 7.4, 13.4]}
+    els = [
+        box("barrel", [7.15, 8.6, -5.5], [8.85, 10.4, 9.0], I, faces={"north": D}),
+        box("bore", [7.6, 9.05, -5.6], [8.4, 9.95, -5.5], D),
+        box("muzzle", [7.0, 8.45, -5.5], [9.0, 10.55, -4.3], I),
+        box("rib", [7.65, 10.4, -5.0], [8.35, 10.8, 9.0], I),
+        box("front_sight", [7.85, 10.8, -4.8], [8.15, 11.25, -3.9], A),
+        box("barrel_flute", [7.05, 9.2, -3.5], [7.15, 9.8, 7.0], "#engrave"),
+        box("barrel_flute_r", [8.85, 9.2, -3.5], [8.95, 9.8, 7.0], "#engrave"),
+        box("cylinder", [6.6, 7.7, 9.0], [9.4, 10.7, 12.2], C, faces={"north": D, "south": D}),
+        box("frame_top", [7.1, 10.7, 8.6], [8.9, 11.0, 13.2], I),
+        box("rear_l", [7.0, 10.75, 12.4], [7.65, 11.5, 13.3], I),
+        box("rear_r", [8.35, 10.75, 12.4], [9.0, 11.5, 13.3], I),
+        box("frame_bottom", [7.1, 7.2, 8.6], [8.9, 7.7, 12.6], I),
+        box("frame_front", [7.1, 7.2, 8.4], [8.9, 10.7, 9.0], I),
+        box("recoil_shield", [7.0, 7.2, 12.2], [9.0, 10.9, 13.6], I),
+        box("engraving_l", [6.95, 8.0, 12.4], [7.0, 10.4, 13.4], A),
+        box("engraving_r", [9.0, 8.0, 12.4], [9.05, 10.4, 13.4], A),
+        box("backstrap", [7.25, 6.8, 13.5], [8.75, 10.6, 14.4], I),
+        box("hammer", [7.6, 10.3, 13.5], [8.4, 11.0, 14.3], D),
+        # a long, curling hammer spur
+        box("spur_1", [7.65, 10.6, 14.2], [8.35, 11.1, 15.0], D),
+        box("spur_2", [7.65, 10.9, 14.9], [8.35, 11.2, 15.6], D),
+        box("trigger", [7.8, 5.9, 11.0], [8.2, 7.2, 11.6], D),
+        box("guard_front", [7.7, 5.5, 10.0], [8.3, 7.2, 10.5], I),
+        box("guard_bottom", [7.7, 5.3, 10.0], [8.3, 5.8, 12.8], I),
+        box("guard_back", [7.7, 5.3, 12.4], [8.3, 7.2, 12.9], I),
+        box("grip_frame", [7.3, 1.6, 12.4], [8.7, 7.4, 14.7], I, rotation=dict(rake)),
+        box("grip_wrap", [6.85, 2.0, 12.5], [9.15, 7.0, 14.6], L, rotation=dict(rake)),
+        box("butt", [7.0, 1.1, 12.3], [9.0, 2.0, 15.0], I, rotation=dict(rake)),
+    ]
+    write("death_knell", {
+        "particle": "beyonder:item/gun/iron_black", "iron": "beyonder:item/gun/iron_black", "dark": "beyonder:item/gun/dark",
+        "leather": "beyonder:item/weapon/leather_wrap", "cylinder": "beyonder:item/gun/iron_cylinder",
+        "silver": "beyonder:item/gun/silver", "engrave": "beyonder:item/gun/steel",
+    }, center_z(els), GUN_DISPLAY)
+
+
+# ---------------------------------------------------------------- blades and staves
+
+def longsword():
+    """A hand-and-a-half sword: tapering blade with a fuller, swept quillons, black grip, faceted pommel."""
+    B, E, F, G, M, P = "#blade", "#edge", "#fuller", "#grip", "#metal", "#pommel"
+    els = [
+        box("pommel", [6.8, -6.0, 6.8], [9.2, -4.4, 9.2], P),
+        box("pommel_cap", [7.3, -6.6, 7.3], [8.7, -6.0, 8.7], M),
+        box("grip", [7.3, -4.4, 7.3], [8.7, 2.0, 8.7], G),
+        box("grip_ring", [7.15, -1.4, 7.15], [8.85, -0.9, 8.85], M),
+        box("guard", [3.0, 2.0, 7.2], [13.0, 3.0, 8.8], M),
+        box("quillon_l", [1.6, 2.8, 7.4], [3.4, 3.6, 8.6], M),
+        box("quillon_r", [12.6, 2.8, 7.4], [14.4, 3.6, 8.6], M),
+        box("ricasso", [6.4, 3.0, 7.45], [9.6, 4.5, 8.55], M),
+        box("blade_low", [6.2, 4.5, 7.55], [9.8, 16.0, 8.45], B),
+        box("blade_mid", [6.5, 16.0, 7.6], [9.5, 25.0, 8.4], B),
+        box("blade_high", [6.9, 25.0, 7.65], [9.1, 29.5, 8.35], B),
+        box("tip", [7.4, 29.5, 7.7], [8.6, 31.5, 8.3], E),
+        box("fuller", [7.7, 4.5, 7.5], [8.3, 22.0, 8.5], F),
+        box("edge_l", [6.1, 4.5, 7.7], [6.3, 16.0, 8.3], E),
+        box("edge_r", [9.7, 4.5, 7.7], [9.9, 16.0, 8.3], E),
+    ]
+    write("longsword", {"particle": "beyonder:item/weapon/blade", "blade": "beyonder:item/weapon/blade",
+                        "edge": "beyonder:item/weapon/edge", "fuller": "beyonder:item/weapon/fuller",
+                        "grip": "beyonder:item/weapon/black_grip", "metal": "beyonder:item/weapon/steel_fitting",
+                        "pommel": "beyonder:item/weapon/steel_fitting"},
+          els, melee_display([8, -1.5, 8], 38, fp_scale=0.45, tp_scale=0.62, els=els))
+
+
+def sword_cane(drawn):
+    """A gentleman's walking cane. Its silver handle draws a slim triangular blade."""
+    S, L, B, E, C = "#silver", "#lacquer", "#blade", "#edge", "#collar"
+    els = [
+        # the handle: a curled silver head
+        box("head_top", [5.0, 3.0, 7.0], [11.5, 5.0, 9.0], S),
+        box("head_curl", [10.0, 0.6, 7.0], [12.0, 3.4, 9.0], S),
+        box("head_knot", [4.4, 2.6, 6.8], [6.4, 5.4, 9.2], S),
+        box("collar", [6.9, -0.5, 6.9], [9.1, 3.0, 9.1], C),
+        box("collar_ring", [6.7, -1.1, 6.7], [9.3, -0.5, 9.3], S),
+    ]
+    if drawn:
+        els += [
+            box("blade", [7.35, -24.0, 7.6], [8.65, -1.1, 8.4], B),
+            box("blade_tip", [7.7, -27.0, 7.75], [8.3, -24.0, 8.25], E),
+            box("edge", [7.25, -24.0, 7.85], [7.35, -1.1, 8.15], E),
+        ]
+    else:
+        els += [
+            box("shaft", [7.2, -24.0, 7.2], [8.8, -1.1, 8.8], L),
+            box("ferrule", [7.1, -26.0, 7.1], [8.9, -24.0, 8.9], S),
+            box("bands", [7.1, -12.0, 7.1], [8.9, -11.4, 8.9], S),
+        ]
+    # stood upright the cane's head is at the top; flip so the blade/shaft points up like a sword
+    for el in els:
+        for k in ("from", "to"):
+            el[k][1] = round(-el[k][1], 3)
+        el["from"][1], el["to"][1] = el["to"][1], el["from"][1]
+    els = shift(els, dy=4.0)
+    name = "sword_cane_drawn" if drawn else "sword_cane"
+    textures = {"particle": "beyonder:item/weapon/silver_ornate", "silver": "beyonder:item/weapon/silver_ornate",
+                "lacquer": "beyonder:item/weapon/black_lacquer", "blade": "beyonder:item/weapon/blade",
+                "edge": "beyonder:item/weapon/edge", "collar": "beyonder:item/weapon/steel_fitting"}
+    overrides = None if drawn else [{"predicate": {"beyonder:drawn": 1}, "model": "beyonder:item/sword_cane_drawn"}]
+    write(name, textures, els, melee_display([8, 1.0, 8], 34, fp_scale=0.5, tp_scale=0.62, els=els), overrides=overrides)
+
+
+def crimson_greatsword():
+    """A massive dark blade split by a glowing crimson channel, with a horned guard and a red stone."""
+    D, R, G, H, J, M = "#dark", "#core", "#guard", "#grip", "#gem", "#metal"
+    els = [
+        box("pommel", [7.0, -7.4, 7.0], [9.0, -5.6, 9.0], M),
+        box("pommel_gem", [7.4, -8.0, 7.4], [8.6, -7.4, 8.6], J, glow=True),
+        box("grip", [7.3, -5.6, 7.3], [8.7, 0.5, 8.7], H),
+        box("grip_ring", [7.1, -2.6, 7.1], [8.9, -2.0, 8.9], M),
+        box("guard", [3.5, 0.5, 6.8], [12.5, 2.6, 9.2], G),
+        box("horn_l1", [2.2, 1.8, 7.2], [3.6, 4.4, 8.8], G),
+        box("horn_l2", [1.4, 3.8, 7.4], [2.6, 5.6, 8.6], G),
+        box("horn_r1", [12.4, 1.8, 7.2], [13.8, 4.4, 8.8], G),
+        box("horn_r2", [13.4, 3.8, 7.4], [14.6, 5.6, 8.6], G),
+        box("guard_spike", [7.3, -0.6, 6.9], [8.7, 0.5, 9.1], G),
+        box("heart", [6.6, 1.0, 6.5], [9.4, 3.8, 9.5], J, glow=True),
+        box("blade", [4.2, 2.6, 7.3], [11.8, 26.5, 8.7], D),
+        box("shoulder_l", [3.6, 2.6, 7.4], [4.2, 6.0, 8.6], G),
+        box("shoulder_r", [11.8, 2.6, 7.4], [12.4, 6.0, 8.6], G),
+        box("core", [7.0, 3.8, 7.2], [9.0, 25.0, 8.8], R, glow=True),
+        box("tip_l", [4.2, 26.5, 7.35], [8.0, 29.0, 8.65], D),
+        box("tip_r", [8.0, 26.5, 7.35], [11.8, 28.0, 8.65], D),
+        box("tip_point", [5.0, 29.0, 7.45], [7.4, 30.5, 8.55], D),
+    ]
+    write("crimson_greatsword", {"particle": "beyonder:item/weapon/dark_blade", "dark": "beyonder:item/weapon/dark_blade",
+                                 "core": "beyonder:item/weapon/crimson_core", "guard": "beyonder:item/weapon/dark_guard",
+                                 "grip": "beyonder:item/weapon/black_grip", "gem": "beyonder:item/weapon/red_gem",
+                                 "metal": "beyonder:item/weapon/dark_guard"},
+          els, melee_display([8, -2.5, 8], 39, fp_scale=0.55, tp_scale=0.72, els=els))
+
+
+def crescent_staff():
+    """A silver staff crowned with a ring and a crescent moon around a floating spirit crystal."""
+    S, P, C, Q = "#silver", "#shaft", "#crystal", "#dark"
+    els = [
+        box("butt_spike", [7.6, -16.0, 7.6], [8.4, -13.5, 8.4], S),
+        box("butt_cap", [7.3, -13.5, 7.3], [8.7, -12.5, 8.7], S),
+        box("shaft", [7.45, -12.5, 7.45], [8.55, 16.0, 8.55], P),
+        box("band_low", [7.25, -2.0, 7.25], [8.75, -1.2, 8.75], S),
+        box("band_high", [7.25, 14.0, 7.25], [8.75, 16.0, 8.75], S),
+        # the ring (an octagon of short bars)
+    ]
+    cx, cy, r = 8.0, 22.5, 5.6
+    for i in range(8):
+        a = i * math.pi / 4
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+        horiz = i % 4 == 2 or i % 4 == 0
+        if i % 2 == 0:
+            w, h = (0.7, 2.6) if i % 4 == 0 else (2.6, 0.7)
+        else:
+            w, h = 1.6, 1.6
+        els.append(box(f"ring_{i}", [x - w, y - h, 7.5], [x + w, y + h, 8.5], S))
+    # the crescent, sweeping up the right side and over the top
+    for i, (x, y, w, h) in enumerate([(13.6, 19.0, 0.8, 1.4), (14.4, 22.0, 0.9, 1.8), (14.0, 25.4, 0.9, 1.6),
+                                       (12.6, 28.0, 0.9, 1.2), (10.6, 29.6, 1.0, 0.8), (8.4, 30.4, 1.0, 0.6)]):
+        els.append(box(f"crescent_{i}", [x - w, y - h, 7.4], [x + w, y + h, 8.6], S))
+    els += [
+        box("crystal", [6.6, 20.8, 6.6], [9.4, 24.2, 9.4], C, glow=True),
+        box("crystal_tip", [7.4, 24.2, 7.4], [8.6, 26.0, 8.6], C, glow=True),
+        box("crystal_base", [7.4, 19.2, 7.4], [8.6, 20.8, 8.6], C, glow=True),
+        box("prong_l", [3.4, 16.0, 7.6], [4.4, 18.6, 8.4], S),
+        box("prong_r", [11.6, 16.0, 7.6], [12.6, 18.6, 8.4], S),
+        box("collar", [5.6, 16.0, 7.0], [10.4, 17.2, 9.0], Q),
+        box("spear_tip", [7.6, 30.0, 7.6], [8.4, 31.9, 8.4], S),
+    ]
+    write("crescent_staff", {"particle": "beyonder:item/weapon/silver_ornate", "silver": "beyonder:item/weapon/silver_ornate",
+                             "shaft": "beyonder:item/weapon/black_lacquer", "crystal": "beyonder:item/weapon/spirit_crystal",
+                             "dark": "beyonder:item/weapon/dark_guard"},
+          els, melee_display([8, 0.0, 8], 48, fp_scale=0.42, tp_scale=0.62, els=els))
+
+
 if __name__ == "__main__":
     revolver()
+    death_knell()
+    longsword()
+    sword_cane(False)
+    sword_cane(True)
+    crimson_greatsword()
+    crescent_staff()
     print("models written")

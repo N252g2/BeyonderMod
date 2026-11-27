@@ -711,6 +711,61 @@ def gun_textures():
     save(img, GUN, "brass.png")
 
 
+# ---------------------------------------------------------------- weapon textures
+
+WEAPON = os.path.join(ITEM, "weapon")
+
+
+def tex16(fn, folder, name, seed=0):
+    rnd = random.Random(seed)
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            c = fn(x, y, rnd)
+            px[x, y] = c if len(c) == 4 else c + (255,)
+    save(img, folder, name)
+
+
+def filigree(x, y):
+    return abs(math.sin(x * 0.8 + math.sin(y * 0.9) * 1.6) - 0.5 * math.cos(y * 0.7)) < 0.1
+
+
+def weapon_textures():
+    # guns: dark iron with silver filigree, polished silver, iron-black for the Sealed Artifact
+    tex16(lambda x, y, r: rgb((48, 50, 60), (0.92 + 0.08 * math.sin(x * 2.3) + (r.random() - .5) * .06)
+                              + (0.22 if y in (2, 3) else 0) + (0.55 if filigree(x, y) else 0)), GUN, "steel.png", 81)
+    tex16(lambda x, y, r: rgb((200, 206, 216), 0.82 + 0.25 * ((x * 3 + y) % 5) / 5 + (r.random() - .5) * .05), GUN, "silver.png", 82)
+    tex16(lambda x, y, r: rgb((34, 34, 38), 0.9 + 0.1 * math.sin(y * 1.7) + (r.random() - .5) * .08 + (0.3 if y in (3, 4) else 0)),
+          GUN, "iron_black.png", 83)
+    tex16(lambda x, y, r: rgb((40, 40, 46), {0: 0.6, 1: 1.0, 2: 1.2, 3: 1.0}[(x + y // 8) % 4] + (r.random() - .5) * .05),
+          GUN, "iron_cylinder.png", 84)
+    tex16(lambda x, y, r: rgb((44, 30, 28), (0.9 + 0.15 * math.sin(y * 0.8 + math.sin(x * 0.5) * 2.0))
+                              * (0.8 if (x + y) % 3 == 0 or (x - y) % 3 == 0 else 1.0)), GUN, "ebony.png", 80)
+    tex16(lambda x, y, r: rgb((96, 62, 38), (0.75 if (y + x // 5) % 5 == 0 else 1.0) * (0.9 + 0.15 * math.sin(x * 0.9))
+                              + (r.random() - .5) * .06), WEAPON, "leather_wrap.png", 85)
+    # blades: bright steel with a darker fuller and pale edges
+    tex16(lambda x, y, r: rgb((178, 188, 200), 0.9 + 0.12 * math.sin(y * 0.4 + x * 0.2) + (r.random() - .5) * .04), WEAPON, "blade.png", 86)
+    tex16(lambda x, y, r: rgb((226, 232, 240), 0.95 + (r.random() - .5) * .05), WEAPON, "edge.png", 87)
+    tex16(lambda x, y, r: rgb((120, 130, 146), 0.92 + (r.random() - .5) * .05), WEAPON, "fuller.png", 88)
+    tex16(lambda x, y, r: rgb((30, 28, 32), (0.7 if y % 3 == 0 else 1.0) + (r.random() - .5) * .1), WEAPON, "black_grip.png", 89)
+    tex16(lambda x, y, r: rgb((140, 146, 156), 0.85 + 0.25 * ((x + y) % 4) / 4), WEAPON, "steel_fitting.png", 90)
+    tex16(lambda x, y, r: rgb((196, 200, 212), 0.8 + 0.2 * ((x * 3 + y * 2) % 7) / 7 + (0.3 if filigree(x, y) else 0)
+                              - (0.25 if filigree(x + 1, y + 1) and not filigree(x, y) else 0)), WEAPON, "silver_ornate.png", 91)
+    tex16(lambda x, y, r: rgb((14, 14, 20), 1.0 + (2.2 if x in (4, 5) else 0) + (r.random() - .5) * .2), WEAPON, "black_lacquer.png", 92)
+    # the crimson greatsword
+    tex16(lambda x, y, r: rgb((46, 42, 48), 0.85 + 0.2 * math.sin(y * 0.5) + (r.random() - .5) * .08), WEAPON, "dark_blade.png", 93)
+
+    def core(x, y, r):
+        vein = abs(math.sin(y * 0.9 + math.sin(x * 1.3) * 1.5)) < 0.25
+        k = 0.8 + 0.4 * math.sin(y * 0.6 + x) ** 2 + (0.5 if vein else 0)
+        return rgb((200, 30, 40), k)
+    tex16(core, WEAPON, "crimson_core.png", 94)
+    tex16(lambda x, y, r: rgb((58, 50, 56), 0.75 + 0.35 * ((x + y * 2) % 5) / 5 + (r.random() - .5) * .08), WEAPON, "dark_guard.png", 95)
+    tex16(lambda x, y, r: rgb((220, 40, 50), 0.7 + 0.6 * max(0.0, 1 - math.hypot(x - 5, y - 5) / 9)), WEAPON, "red_gem.png", 96)
+    tex16(lambda x, y, r: rgb((150, 200, 255), 0.7 + 0.5 * max(0.0, 1 - math.hypot(x - 5, y - 5) / 10)) + (235,),
+          WEAPON, "spirit_crystal.png", 97)
+
+
 if __name__ == "__main__":
     cobbles()
     soot_bricks()
@@ -726,3 +781,4 @@ if __name__ == "__main__":
     print("textures written")
     all_060()
     gun_textures()
+    weapon_textures()

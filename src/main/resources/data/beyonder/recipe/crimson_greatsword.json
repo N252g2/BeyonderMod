@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    " BC",
+    "CBC",
+    "N  "
+  ],
+  "key": {
+    "B": {
+      "item": "minecraft:netherite_ingot"
+    },
+    "C": {
+      "item": "beyonder:crimson_spore"
+    },
+    "N": {
+      "item": "minecraft:blackstone"
+    }
+  },
+  "result": {
+    "id": "beyonder:crimson_greatsword",
+    "count": 1
+  }
+}

@@ -42,15 +42,44 @@ import net.minecraft.world.phys.Vec3;
  * <p>The client sends fire and reload requests ({@code GunActionPayload}); everything is decided here.</p>
  */
 public class RevolverItem extends Item {
+    /** How a gun handles. Every gun shares the revolver's controls and animations. */
+    public record Stats(float damage, int fireTicks, int reloadTicks, int capacity, float hipSpread, float adsSpread, float kick) {}
+
+    public static final Stats REVOLVER = new Stats(9.0F, 9, 40, 6, 3.0F, 0.35F, 2.6F);
     public static final int CAPACITY = 6;
-    public static final int FIRE_TICKS = 9;
     public static final int RELOAD_TICKS = 40;
     private static final double RANGE = 64.0;
     private static final String KEY = "Cylinder";
 
+    private final Stats stats;
+
     public RevolverItem(Properties properties) {
-        super(properties);
+        this(properties, REVOLVER);
     }
+
+    public RevolverItem(Properties properties, Stats stats) {
+        super(properties);
+        this.stats = stats;
+    }
+
+    public Stats stats() {
+        return stats;
+    }
+
+    public static Stats stats(ItemStack stack) {
+        return stack.getItem() instanceof RevolverItem gun ? gun.stats : REVOLVER;
+    }
+
+    /** Hook: a gun that always finds the target's weak point (Death Knell). */
+    protected boolean findsWeakness() {
+        return false;
+    }
+
+    /** Hook: runs after every shot (a Sealed Artifact's price). */
+    protected void afterShot(ServerPlayer player, ItemStack stack) {}
+
+    /** Hook: extra sound layered on the shot. */
+    protected void shotSound(ServerLevel level, ServerPlayer player) {}
 
     // ------------------------------------------------------------------ aiming (hold use)
 
@@ -90,10 +119,11 @@ public class RevolverItem extends Item {
         }
         boolean silver = cylinder.charAt(0) == 'S';
         setCylinder(stack, cylinder.substring(1));
-        player.getCooldowns().addCooldown(item, FIRE_TICKS);
+        Stats st = item.stats;
+        player.getCooldowns().addCooldown(item, st.fireTicks());
 
         // Hip fire scatters; aimed shots go nearly where the sights are.
-        float spread = isAiming(player) ? 0.35F : 3.0F;
+        float spread = isAiming(player) ? st.adsSpread() : st.hipSpread();
         if (player.isSprinting() || !player.onGround()) {
             spread += 2.5F;
         }
@@ -109,6 +139,7 @@ public class RevolverItem extends Item {
         Vec3 muzzle = eye.add(dir.scale(1.1)).add(0, -0.12, 0);
         level.sendParticles(ParticleTypes.FLASH, muzzle.x, muzzle.y, muzzle.z, 1, 0, 0, 0, 0);
         level.sendParticles(ParticleTypes.SMOKE, muzzle.x, muzzle.y, muzzle.z, 6, 0.04, 0.04, 0.04, 0.015);
+        item.shotSound(level, player);
 
         BlockHitResult block = level.clip(new ClipContext(eye, eye.add(dir.scale(RANGE)), ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE, player));
@@ -127,8 +158,8 @@ public class RevolverItem extends Item {
         }
 
         if (hit != null && hit.getEntity() instanceof LivingEntity target) {
-            float damage = 9.0F;
-            boolean headshot = hit.getLocation().y > target.getEyeY() - 0.25;
+            float damage = st.damage();
+            boolean headshot = item.findsWeakness() || hit.getLocation().y > target.getEyeY() - 0.25;
             if (headshot) {
                 damage *= 1.5F;
             }
@@ -152,25 +183,27 @@ public class RevolverItem extends Item {
             level.playSound(null, pos, state.getSoundType(level, pos, player).getHitSound(), SoundSource.BLOCKS, 0.9F, 1.4F);
         }
         stack.hurtAndBreak(1, player, LivingEntity.getSlotForHand(InteractionHand.MAIN_HAND));
+        item.afterShot(player, stack);
     }
 
     // ------------------------------------------------------------------ reloading
 
     public static void reload(ServerPlayer player, ItemStack gun) {
         RevolverItem item = (RevolverItem) gun.getItem();
+        int capacity = item.stats.capacity();
         String cylinder = cylinder(gun);
-        if (cylinder.length() >= CAPACITY || player.getCooldowns().isOnCooldown(item)) {
+        if (cylinder.length() >= capacity || player.getCooldowns().isOnCooldown(item)) {
             return;
         }
         Inventory inv = player.getInventory();
         StringBuilder loaded = new StringBuilder(cylinder);
-        loadFrom(player.getOffhandItem(), loaded);
-        for (int pass = 0; pass < 2 && loaded.length() < CAPACITY; pass++) {
+        loadFrom(player.getOffhandItem(), loaded, capacity);
+        for (int pass = 0; pass < 2 && loaded.length() < capacity; pass++) {
             Item want = pass == 0 ? BeyonderContent.REVOLVER_ROUND.get() : BeyonderContent.SILVER_ROUND.get();
-            for (int i = 0; i < inv.getContainerSize() && loaded.length() < CAPACITY; i++) {
+            for (int i = 0; i < inv.getContainerSize() && loaded.length() < capacity; i++) {
                 ItemStack s = inv.getItem(i);
                 if (s.is(want)) {
-                    loadFrom(s, loaded);
+                    loadFrom(s, loaded, capacity);
                 }
             }
         }
@@ -180,16 +213,16 @@ public class RevolverItem extends Item {
         }
         setCylinder(gun, loaded.toString());
         inv.setChanged();
-        player.getCooldowns().addCooldown(item, RELOAD_TICKS);
+        player.getCooldowns().addCooldown(item, item.stats.reloadTicks());
         player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.CHAIN_PLACE,
                 SoundSource.PLAYERS, 0.8F, 1.5F);
         // The cylinder swings back in near the end of the reload.
-        io.github.n252g2.beyonder.core.Beyonders.later(player, RELOAD_TICKS - 8, () ->
+        io.github.n252g2.beyonder.core.Beyonders.later(player, item.stats.reloadTicks() - 8, () ->
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.IRON_DOOR_CLOSE,
                         SoundSource.PLAYERS, 0.45F, 2.0F));
     }
 
-    private static void loadFrom(ItemStack source, StringBuilder loaded) {
+    private static void loadFrom(ItemStack source, StringBuilder loaded, int capacity) {
         char kind;
         if (source.is(BeyonderContent.SILVER_ROUND.get())) {
             kind = 'S';
@@ -198,7 +231,7 @@ public class RevolverItem extends Item {
         } else {
             return;
         }
-        while (loaded.length() < CAPACITY && !source.isEmpty()) {
+        while (loaded.length() < capacity && !source.isEmpty()) {
             loaded.append(kind);
             source.shrink(1);
         }
@@ -233,7 +266,7 @@ public class RevolverItem extends Item {
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         String cylinder = cylinder(stack);
         long silver = cylinder.chars().filter(c -> c == 'S').count();
-        tooltip.add(Component.literal("Cylinder: " + cylinder.length() + "/" + CAPACITY
+        tooltip.add(Component.literal("Cylinder: " + cylinder.length() + "/" + stats.capacity()
                 + (silver > 0 ? " (" + silver + " silver)" : "")).withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.literal("Left click fire · hold right click aim · R reload").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("Off-hand rounds load first. Silver sears the undead.").withStyle(ChatFormatting.DARK_AQUA));
@@ -244,8 +277,9 @@ public class RevolverItem extends Item {
         return slotChanged || !oldStack.is(newStack.getItem());
     }
 
-    /** Small helper for the client's camera kick. */
-    public static float kick(boolean aiming) {
-        return aiming ? 1.6F : 2.6F;
+    /** The client's camera kick for this gun. */
+    public static float kick(ItemStack stack, boolean aiming) {
+        float k = stats(stack).kick();
+        return aiming ? k * 0.6F : k;
     }
 }
