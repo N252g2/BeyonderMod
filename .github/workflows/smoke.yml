@@ -31,7 +31,7 @@ jobs:
           grep -q "Done (" server.log
       - name: Game tests (equipment rules on a mock player)
         run: |
-          timeout 900 ./gradlew runGameTestServer --console=plain > gametest.log 2>&1; code=$?
+          code=0; timeout 900 ./gradlew runGameTestServer --console=plain > gametest.log 2>&1 || code=$?
           grep -nE "GameTest|gametest|passed|failed|Mixin|ERROR|Exception|Caused by|assert" gametest.log | grep -v "DEBUG" | head -80
           exit $code
 
