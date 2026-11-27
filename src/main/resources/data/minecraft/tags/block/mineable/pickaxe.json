@@ -41,6 +41,8 @@
     "beyonder:clock_face",
     "beyonder:sewer_grate",
     "beyonder:gravestone",
-    "beyonder:wall_gas_lamp"
+    "beyonder:wall_gas_lamp",
+    "beyonder:park_bench",
+    "beyonder:post_box"
   ]
 }

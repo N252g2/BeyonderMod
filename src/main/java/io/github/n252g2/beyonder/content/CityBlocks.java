@@ -93,6 +93,12 @@ public final class CityBlocks {
                     .lightLevel(s -> 14).noOcclusion().noCollission().pushReaction(PushReaction.DESTROY)
                     .requiresCorrectToolForDrops());
 
+    public static final DeferredBlock<TingenFacingBlock> PARK_BENCH = facing("park_bench", TingenFacingBlock.Kind.BENCH,
+            BlockBehaviour.Properties.of().mapColor(MapColor.WOOD).strength(2.0F, 6.0F).sound(SoundType.WOOD).noOcclusion());
+    public static final DeferredBlock<TingenFacingBlock> POST_BOX = facing("post_box", TingenFacingBlock.Kind.POST_BOX,
+            BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_RED).strength(3.0F, 6.0F).sound(SoundType.METAL)
+                    .noOcclusion().requiresCorrectToolForDrops());
+
     /** The block items, in creative-tab order. */
     public static List<DeferredItem<BlockItem>> tabItems() {
         return ITEMS;

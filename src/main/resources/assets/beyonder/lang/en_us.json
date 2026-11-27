@@ -131,5 +131,7 @@
   "block.beyonder.red_awning": "Red Awning",
   "block.beyonder.green_awning": "Green Awning",
   "block.beyonder.blue_awning": "Blue Awning",
-  "block.beyonder.wall_gas_lamp": "Wall Gas Lamp"
+  "block.beyonder.wall_gas_lamp": "Wall Gas Lamp",
+  "block.beyonder.park_bench": "Park Bench",
+  "block.beyonder.post_box": "Pillar Box"
 }

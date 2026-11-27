@@ -26,7 +26,8 @@ import org.slf4j.Logger;
 /**
  * Places a city into the overworld a slice at a time, so the server keeps ticking. Progress is saved with the
  * world, so a restart carries on where it stopped. Pass 1 lays every block (and clears what is above), pass 2
- * pours the water and lets stairs, fences, panes and walls join up, pass 3 writes the signs and sets the spawn.
+ * pours the water and lets stairs, fences, panes and walls join up, pass 3 eases the land around the city into
+ * the surrounding ground, pass 4 writes the signs and sets the spawn.
  * Natural monster spawns are refused in the streets of a finished city (the sewers below are left to them).
  */
 public final class CityBuilder extends SavedData {
@@ -38,7 +39,9 @@ public final class CityBuilder extends SavedData {
 
     String city = "tingen";
     boolean active;
-    int phase;              // 1 blocks, 2 water and shapes, 3 signs, 4 done
+    int phase;              // 1 blocks, 2 water and shapes, 3 border, 4 signs, 5 done
+    /** Width of the ring of land outside the city that is eased into the surrounding ground. */
+    static final int BORDER = 32;
     int chunk;
     int voxel;
     int ox, oy, oz;         // world position of the city's [0, 0, 0]
@@ -115,8 +118,13 @@ public final class CityBuilder extends SavedData {
             String what = switch (phase) {
                 case 1 -> "laying blocks";
                 case 2 -> "pouring water and joining stairs, fences and walls";
+                case 3 -> "easing the land around the city";
                 default -> "writing signs";
             };
+            if (phase == 3) {
+                long ring = (long) (c.w + 2 * BORDER) * (c.d + 2 * BORDER);
+                return String.format("Building %s: %s, %d%%.", c.name, what, (int) (chunk * 100L / ring));
+            }
             return String.format("Building %s: %s, %d%% (%d of %d columns, %,d blocks placed).", c.name, what,
                     chunk * 100 / Math.max(1, total), chunk, total, placed);
         } catch (Exception e) {
@@ -147,9 +155,18 @@ public final class CityBuilder extends SavedData {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         BlockState air = Blocks.AIR.defaultBlockState();
         while (System.nanoTime() < deadline) {
-            if (phase == 3) {
+            if (phase >= 4) {
                 finish(server, level, c);
                 return;
+            }
+            if (phase == 3) {
+                if (border(level, c, deadline)) {
+                    phase = 4;
+                    chunk = 0;
+                    setDirty();
+                    LOG.info("City {}: writing signs", c.name);
+                }
+                continue;
             }
             if (chunk >= total) {
                 phase++;
@@ -220,6 +237,55 @@ public final class CityBuilder extends SavedData {
         }
     }
 
+    /** Pass 3: a ring of land round the city, sloping from its streets to the ground that was there. */
+    private boolean border(ServerLevel level, CityData c, long deadline) {
+        int bw = c.w + 2 * BORDER, bd = c.d + 2 * BORDER;
+        int total = bw * bd;
+        int cityTop = oy + c.street - 1;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        BlockState dirt = Blocks.DIRT.defaultBlockState(), grass = Blocks.GRASS_BLOCK.defaultBlockState();
+        BlockState air = Blocks.AIR.defaultBlockState();
+        while (chunk < total) {
+            if ((chunk & 63) == 0 && System.nanoTime() >= deadline) {
+                return false;
+            }
+            int cx = chunk % bw - BORDER, cz = chunk / bw - BORDER;
+            chunk++;
+            if (cx >= 0 && cz >= 0 && cx < c.w && cz < c.d) {
+                chunk += Math.max(0, c.w - cx - 1);         // skip the rest of this row inside the city
+                continue;
+            }
+            int dx = cx < 0 ? -cx : Math.max(0, cx - c.w + 1);
+            int dz = cz < 0 ? -cz : Math.max(0, cz - c.d + 1);
+            int dist = Math.max(dx, dz);
+            int x = ox + cx, z = oz + cz;
+            LevelChunk lc = level.getChunk(x >> 4, z >> 4);
+            int orig = lc.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x & 15, z & 15);
+            int high = lc.getHeight(Heightmap.Types.WORLD_SURFACE, x & 15, z & 15);
+            double t = dist / (double) (BORDER + 1);
+            t = t * t * (3 - 2 * t);
+            int target = (int) Math.round(cityTop + (orig - cityTop) * t);
+            if (target == orig && high == orig) {
+                continue;
+            }
+            for (int y = Math.min(orig, target) + 1; y <= Math.max(high, target); y++) {
+                pos.set(x, y, z);
+                BlockState want = y < target ? dirt : y == target ? grass : air;
+                if (lc.getBlockState(pos) != want) {
+                    level.setBlock(pos, want, FLAGS);
+                }
+            }
+            pos.set(x, Math.min(orig, target), z);
+            if (orig < target && lc.getBlockState(pos).is(Blocks.GRASS_BLOCK)) {
+                level.setBlock(pos, dirt, FLAGS);
+            } else if (orig > target) {
+                pos.set(x, target, z);
+                level.setBlock(pos, grass, FLAGS);
+            }
+        }
+        return true;
+    }
+
     private void finish(MinecraftServer server, ServerLevel level, CityData c) {
         for (CityData.Sign s : c.signs) {
             BlockPos p = new BlockPos(ox + s.x(), oy + s.y(), oz + s.z());
@@ -240,10 +306,12 @@ public final class CityBuilder extends SavedData {
         int[] spawn = c.marks.get("spawn");
         if (spawn != null) {
             level.setDefaultSpawnPos(new BlockPos(ox + spawn[0], oy + spawn[1], oz + spawn[2]), spawn[3]);
+            // arrive on the plaza itself, not on a random roof nearby
+            level.getGameRules().getRule(net.minecraft.world.level.GameRules.RULE_SPAWN_RADIUS).set(0, server);
         }
         active = false;
         built = true;
-        phase = 4;
+        phase = 5;
         setDirty();
         LOG.info("City {} finished: {} blocks placed", c.name, placed);
         if (CITY_TEST) {
@@ -305,7 +373,7 @@ public final class CityBuilder extends SavedData {
     }
 
     public void resume() {
-        if (phase >= 1 && phase < 4) {
+        if (phase >= 1 && phase < 5) {
             active = true;
             dataChunk = -1;
             setDirty();

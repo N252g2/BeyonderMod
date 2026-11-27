@@ -32,7 +32,11 @@ public class TingenFacingBlock extends HorizontalDirectionalBlock {
         /** Rounded headstone on a plinth. */
         GRAVESTONE(false, box(2, 0, 4, 14, 14, 12)),
         /** A clock dial set into stone; a full block. */
-        CLOCK(false, Shapes.block());
+        CLOCK(false, Shapes.block()),
+        /** Slatted park bench between iron ends; you sit facing {@code facing}. */
+        BENCH(false, Shapes.or(box(0, 0, 3, 16, 7.5, 12), box(0, 0, 11, 16, 15, 13.5))),
+        /** A red pillar box. */
+        POST_BOX(false, box(3, 0, 3, 13, 16, 13));
 
         final boolean wallHung;
         final Map<Direction, VoxelShape> shapes = new EnumMap<>(Direction.class);

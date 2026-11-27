@@ -429,7 +429,7 @@ def cathedral_plaza(g, cv, rng, marks):
         for z in (pz0 + 2, pz1 - 2):
             cv.a[s, z, x] = I("b:lamp_post"); cv.a[s + 1, z, x] = I("b:lamp_post"); cv.a[s + 2, z, x] = I("b:gas_lamp")
             for dx in (-2, 2):
-                cv.a[s, z, x + dx] = I("dark_oak_stairs", facing="south" if z == pz0 + 2 else "north")
+                cv.a[s, z, x + dx] = I("b:park_bench", facing="south" if z == pz0 + 2 else "north")
     # trees in tubs along the west side
     for z in range(pz0 + 6, pz1 - 4, 8):
         cv.a[s - 1, z, px0 + 3] = I("grass_block")
@@ -630,7 +630,7 @@ def lamp(cv, x, z, y=None):
 
 
 def bench(cv, x, z, facing):
-    cv.set(x, cv.street, z, I("dark_oak_stairs", facing=facing))
+    cv.set(x, cv.street, z, I("b:park_bench", facing=facing))
 
 
 def classical(rng, w, d, storeys, cols, name, wall="b:ashlar", roof=None, dome=False, lit=0.5, arched=False):
@@ -882,7 +882,7 @@ def station(g, cv, rng, marks):
         cv.a[s - 1, pz, shx0:shx1 - 2] = I("stone")
     for pz in (18, 26, 34, 42, 50):
         for x in range(shx0 + 8, shx1 - 4, 12):
-            cv.a[s + 1, pz, x] = I("dark_oak_stairs", facing="north")
+            cv.a[s + 1, pz, x] = I("b:park_bench", facing="north")
             cv.a[s + 1:s + 4, pz, x + 6] = I("polished_blackstone_wall")
             cv.a[s + 4, pz, x + 6] = I("lantern")
     # concourse across the buffer end
@@ -1312,3 +1312,122 @@ def works(g, cv, rng, marks):
             continue
         cv.stamp(v, fx, fz, facing=face)
         reserve(g, fx, fz, fx + fw - 1, fz + fd - 1)
+
+
+# ---------------------------------------------------------------- district churches
+
+
+def church(rng, wall, trim, roof, glass_a, glass_b, spire=True, name=("", "", "", "")):
+    """A parish church facing north: nave with lancets, a corner tower with a broach spire."""
+    w, d = 15, 30
+    v = Vol(w, 46, d)
+    v.fill(1, 0, 4, w - 2, 9, d - 1, wall.block)
+    v.fill(2, 1, 5, w - 3, 8, d - 2, AIR)
+    for x in range(2, w - 2):
+        for z in range(5, d - 1):
+            v.set(x, 0, z, S("polished_andesite") if (x + z) % 2 else S("b:flagstones"))
+    for z in range(7, d - 2, 4):
+        for x in (1, w - 2):
+            for y in range(2, 8):
+                v.set(x, y, z, S(glass_a) if (y + z) % 2 else S(glass_b))
+            v.set(x, 8, z, trim.block)
+        for x in (0, w - 1):
+            v.fill(x, 0, z + 2, x, 6, z + 2, trim.block)
+            v.set(x, 7, z + 2, trim.stairs("east" if x == 0 else "west"))
+    # west front: a tall window and the door
+    for x in range(5, 10):
+        for y in range(4, 9):
+            v.set(x, y, 4, S(glass_a) if (x + y) % 2 else S(glass_b))
+    v.set(5, 9, 4, trim.stairs("east", "top")); v.set(9, 9, 4, trim.stairs("west", "top"))
+    v.fill(6, 1, 4, 8, 3, 4, AIR)
+    pt.double_door(v, 6, 1, 5, "dark_oak", "north")
+    v.set(8, 1, 5, S("dark_oak_door", facing="north", half="lower", hinge="right"))
+    v.set(8, 2, 5, S("dark_oak_door", facing="north", half="upper", hinge="right"))
+    v.set(7, 0, 3, trim.stairs("south"))
+    steep_gable_z(v, 1, w - 2, 4, d - 1, 10, roof, wall.block)
+    # tower at the north-east corner
+    tx0, tz0 = w - 5, 0
+    v.fill(tx0, 0, tz0, tx0 + 4, 20, tz0 + 4, wall.block)
+    v.fill(tx0 + 1, 1, tz0 + 1, tx0 + 3, 19, tz0 + 3, AIR)
+    for y in (6, 12):
+        v.fill(tx0 + 2, y, tz0, tx0 + 2, y + 2, tz0, pt.WINDOW)
+    v.fill(tx0 + 1, 16, tz0, tx0 + 3, 18, tz0, S("iron_bars")); v.fill(tx0, 16, tz0 + 1, tx0, 18, tz0 + 3, S("iron_bars"))
+    v.fill(tx0 + 4, 16, tz0 + 1, tx0 + 4, 18, tz0 + 3, S("iron_bars"))
+    v.set(tx0 + 2, 17, tz0 + 2, S("bell", attachment="ceiling", facing="north"))
+    v.fill(tx0 + 2, 18, tz0 + 2, tx0 + 2, 19, tz0 + 2, S("chain"))
+    if spire:
+        for k in range(15):
+            r = 2.6 - k * 0.175
+            for x in range(tx0, tx0 + 5):
+                for z in range(tz0, tz0 + 5):
+                    if max(abs(x - tx0 - 2), abs(z - tz0 - 2)) <= r:
+                        v.set(x, 21 + k, z, roof.block)
+        v.fill(tx0 + 2, 36, tz0 + 2, tx0 + 2, 37, tz0 + 2, trim.wall())
+        v.set(tx0 + 2, 38, tz0 + 2, S("lightning_rod"))
+    else:
+        for x in range(tx0, tx0 + 5):
+            for z in range(tz0, tz0 + 5):
+                if x in (tx0, tx0 + 4) or z in (tz0, tz0 + 4):
+                    v.set(x, 21, z, trim.block if (x + z) % 2 == 0 else AIR)
+    v.sign(7, 4, 3, S("dark_oak_wall_sign", facing="north"), list(name))
+    for z in range(8, d - 4, 2):
+        v.fill(2, 1, z, 5, 1, z, S("dark_oak_stairs", facing="south"))
+        v.fill(9, 1, z, 12, 1, z, S("dark_oak_stairs", facing="south"))
+    v.fill(5, 1, d - 3, 9, 1, d - 3, S("smooth_quartz"))
+    v.set(7, 2, d - 3, S("candle", candles="4", lit="true"))
+    for z in range(8, d - 2, 6):
+        v.set(7, 8, z, S("lantern", hanging="true"))
+    return v
+
+
+def find_lot(g, near, w, d, facing, radius=60):
+    """A free w x d lot (turned to face ``facing``) whose front touches a street, as close to ``near`` as can be."""
+    fw, fd = (w, d) if facing in ("north", "south") else (d, w)
+    nx, nz = near
+    best = None
+    for r in range(0, radius):
+        for x in range(nx - r, nx + r + 1):
+            for z in (nz - r, nz + r) if r else (nz,):
+                for xx, zz in ((x, z), (nx + (z - nz), nz + (x - nx))):
+                    if xx < 1 or zz < 1 or xx + fw >= g.free.shape[1] - 1 or zz + fd >= g.free.shape[0] - 1:
+                        continue
+                    if not g.free[zz:zz + fd, xx:xx + fw].all():
+                        continue
+                    if facing == "north":
+                        front = g.cell[zz - 1, xx:xx + fw]
+                    elif facing == "south":
+                        front = g.cell[zz + fd, xx:xx + fw]
+                    elif facing == "west":
+                        front = g.cell[zz:zz + fd, xx - 1]
+                    else:
+                        front = g.cell[zz:zz + fd, xx + fw]
+                    if ((front >= 1) & (front <= 3)).mean() > 0.9:
+                        return xx, zz
+    return best
+
+
+@landmark
+def churches(g, cv, rng, marks):
+    s = cv.street
+    plans = [
+        ("storm", (140, 352), "north", pt.STONEBRICK, pt.POL_DEEP, pt.SLATE, "blue_stained_glass", "cyan_stained_glass", True,
+         ("Church of the", "Lord of Storms", "", "")),
+        ("steam", (280, 101), "east", pt.RED, pt.ASHLAR, pt.COPPER, "orange_stained_glass", "yellow_stained_glass", False,
+         ("Church of the God", "of Steam and", "Machinery", "")),
+        ("evernight", (560, 300), "west", pt.DEEP_BRICK, pt.BLACK, pt.DEEPTILE, "blue_stained_glass", "red_stained_glass", True,
+         ("Evernight", "Chapel of", "Saint Arianna", "")),
+        ("west_chapel", (75, 270), "south", pt.ASHLAR, pt.POL_DEEP, pt.SLATE, "blue_stained_glass", "red_stained_glass", True,
+         ("Evernight", "Chapel of", "the Crimson Moon", "")),
+    ]
+    for key, near, facing, wall, trim, roof, ga, gb, spire, name in plans:
+        v = church(rng, wall, trim, roof, ga, gb, spire, name)
+        spot = find_lot(g, near, v.w, v.d, facing)
+        if spot is None:
+            print("no lot for church", key)
+            continue
+        x, z = spot
+        fw, fd = (v.w, v.d) if facing in ("north", "south") else (v.d, v.w)
+        ground(g, cv, x, z, x + fw - 1, z + fd - 1, "b:flagstones", clear=False)
+        cv.stamp(v, x, z, facing=facing)
+        reserve(g, x, z, x + fw - 1, z + fd - 1)
+        marks["church_" + key] = (x + fw // 2, s, z + fd // 2, 0)

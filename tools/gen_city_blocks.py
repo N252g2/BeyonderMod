@@ -414,6 +414,46 @@ def awnings():
     awning("blue_awning", (44, 60, 104), (222, 210, 186))
 
 
+def bench_textures():
+    """Slatted park-bench wood and its cast-iron ends."""
+    img, px = new()
+    rnd = random.Random(171)
+    for y in range(16):
+        for x in range(16):
+            slat = (y // 3) % 2 == 0 and y % 3 != 2
+            base = (122, 88, 56) if slat else (52, 40, 30)
+            px[x, y] = rgb(base, 1.0 + (rnd.random() - 0.5) * 0.12 + (0.06 if y % 3 == 0 else 0)) + (255,)
+    save(img, "bench_wood")
+    img, px = new()
+    for y in range(16):
+        for x in range(16):
+            k = 1.0 + (rnd.random() - 0.5) * 0.1 + (0.12 if (x + y) % 5 == 0 else 0)
+            px[x, y] = rgb((44, 46, 50), k) + (255,)
+    save(img, "bench_iron")
+
+
+def post_box():
+    """A red cast-iron pillar box: a black band, the letter slot, the royal-red paint worn at the edges."""
+    img, px = new()
+    rnd = random.Random(173)
+    for y in range(16):
+        for x in range(16):
+            k = 1.0 + (rnd.random() - 0.5) * 0.1
+            if x in (0, 15):
+                k -= 0.15
+            c = (168, 30, 28)
+            if y in (3, 4) and 4 <= x <= 11:
+                c, k = (20, 18, 18), 1.0             # the slot
+            elif y == 2 and 4 <= x <= 11:
+                c = (196, 52, 44)                    # slot hood
+            elif y >= 14:
+                c = (34, 30, 30)                     # black plinth band
+            elif 7 <= y <= 9 and 5 <= x <= 10:
+                c = (186, 150, 70) if (x + y) % 2 else (150, 116, 50)   # a small gilt plate
+            px[x, y] = rgb(c, k) + (255,)
+    save(img, "post_box")
+
+
 def draw_all():
     bricks("stock_bricks", [(178, 152, 106), (164, 140, 98), (188, 162, 114), (150, 130, 94), (172, 148, 104)],
            (122, 116, 104), seed=151, soot=0.35)
@@ -435,6 +475,8 @@ def draw_all():
     crate()
     sewer_grate()
     awnings()
+    bench_textures()
+    post_box()
 
 
 # ------------------------------------------------------------------ JSON
@@ -636,6 +678,24 @@ def write_all_json():
                                          element([5.5, 12, 5.5], [10.5, 13, 10.5], "#iron"),
                                          element([7, 13, 7], [9, 14.5, 9], "#iron")]})
     horizontal("wall_gas_lamp", "wall_gas_lamp"); item_model("wall_gas_lamp"); loot("wall_gas_lamp"); reg("wall_gas_lamp", "Wall Gas Lamp")
+
+    # park bench: slatted seat and back between cast-iron ends; the sitter faces north
+    model("park_bench", {"parent": "minecraft:block/block", "render_type": "minecraft:cutout",
+                         "textures": {"particle": "beyonder:block/bench_wood", "w": "beyonder:block/bench_wood", "i": "beyonder:block/bench_iron"},
+                         "elements": [element([1, 6, 3], [15, 7.5, 12], "#w"),
+                                      element([1, 8, 12], [15, 15, 13.5], "#w"),
+                                      element([0, 0, 3], [1.5, 7, 4.5], "#i"), element([0, 0, 11], [1.5, 15, 13.5], "#i"),
+                                      element([14.5, 0, 3], [16, 7, 4.5], "#i"), element([14.5, 0, 11], [16, 15, 13.5], "#i"),
+                                      element([0, 6, 3], [1.5, 8.5, 12], "#i"), element([14.5, 6, 3], [16, 8.5, 12], "#i")]})
+    horizontal("park_bench", "park_bench"); item_model("park_bench"); loot("park_bench"); reg("park_bench", "Park Bench")
+    # pillar box: a red cylinder-ish post with a cap; the slot faces north
+    model("post_box", {"parent": "minecraft:block/block",
+                       "textures": {"particle": "beyonder:block/post_box", "p": "beyonder:block/post_box"},
+                       "elements": [element([4, 0, 4], [12, 14, 12], "#p"),
+                                    element([3.5, 0, 3.5], [12.5, 1.5, 12.5], "#p"),
+                                    element([3, 14, 3], [13, 15.5, 13], "#p"),
+                                    element([5, 15.5, 5], [11, 16, 11], "#p")]})
+    horizontal("post_box", "post_box"); item_model("post_box"); loot("post_box"); reg("post_box", "Pillar Box")
 
     # tags
     stone = [n for n in names if not any(k in n for k in ("planks", "plank", "timber", "crate", "awning", "window"))]

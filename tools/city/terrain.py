@@ -34,8 +34,9 @@ class River:
 class Street:
     KINDS = {"avenue": "PPPKRRRRRRRKPPP", "street": "PPKRRRRRKPP", "lane": "RRRRR", "wide": "PPPPKRRRRRRRRRKPPPP"}
 
-    def __init__(self, name, axis, c, a, b, kind="street", sewer=False):
+    def __init__(self, name, axis, c, a, b, kind="street", sewer=False, trees=False):
         self.name, self.axis, self.c, self.a, self.b, self.kind, self.sewer = name, axis, c, a, b, kind, sewer
+        self.trees = trees
         self.prof = self.KINDS[kind]
         self.hw = len(self.prof) // 2
 
@@ -97,6 +98,14 @@ class Ground:
         cv.a[s - BED, zs, xs] = I("gravel")
         cv.a[s - BED + 1:s - WATER_TOP + 1, zs, xs] = I("water")
         cv.a[s - WATER_TOP + 1:s, zs, xs] = 0
+        # weirs where the rivers leave the city, so the water stays in its channels
+        D_, W_ = self.water.shape
+        edge = np.zeros_like(self.water)
+        edge[:2, :] = edge[-2:, :] = True
+        edge[:, :2] = edge[:, -2:] = True
+        zs, xs = np.nonzero(self.water & edge)
+        cv.a[s - BED - 1:s - WATER_TOP + 1, zs, xs] = I("mossy_stone_bricks")
+        cv.a[s - WATER_TOP + 1, zs, xs] = I("b:ashlar_slab", type="bottom")
         zs, xs = np.nonzero(self.wall)
         cv.a[s - BED - 1:s, zs, xs] = I("b:ashlar")
         # water-stained lower courses
@@ -120,6 +129,14 @@ class Ground:
                 cv.a[s + 1, z, x] = I("b:ashlar_wall")
             if (x + 2 * z) % 23 == 0:
                 cv.a[s + 1, z, x] = I("b:lamp_post"); cv.a[s + 2, z, x] = I("b:lamp_post"); cv.a[s + 3, z, x] = I("b:gas_lamp")
+        # benches along the promenade looking over the water
+        near = self.prom & ndimage.binary_dilation(self.wall, iterations=1)
+        for z, x in zip(*np.nonzero(near)):
+            if (x * 3 + z * 5) % 29 == 0:
+                for d, (dx, dz) in (("north", (0, -1)), ("south", (0, 1)), ("west", (-1, 0)), ("east", (1, 0))):
+                    if 0 <= z + dz < self.wall.shape[0] and 0 <= x + dx < self.wall.shape[1] and self.wall[z + dz, x + dx]:
+                        cv.a[s, z, x] = I("b:park_bench", facing=d)
+                        break
         # trees along the promenade
         for z, x in zip(*np.nonzero(self.prom)):
             if (x * 31 + z * 17) % 97 == 0 and self.prom[max(z - 1, 0):z + 2, max(x - 1, 0):x + 2].all():
@@ -225,6 +242,19 @@ class Ground:
                     cv.a[s, z, x] = I("b:lamp_post"); cv.a[s + 1, z, x] = I("b:lamp_post")
                     cv.a[s + 2, z, x] = I("b:gas_lamp")
                     self.lamps.append((x, z))
+                    # now and then a pillar box beside the lamp, its slot to the pavement
+                    if (t // spacing + sid) % 5 == 2:
+                        bx, bz = (x + 1, z) if st.axis == "x" else (x, z + 1)
+                        if self.cell[bz, bx] == 1 and cv.a[s, bz, bx] == 0:
+                            face = ("north" if side == 0 else "south") if st.axis == "x" else ("west" if side == 0 else "east")
+                            cv.a[s, bz, bx] = I("b:post_box", facing=face)
+                    # plane trees between the lamps on the avenues
+                    if st.kind in ("avenue", "wide") and st.trees:
+                        tx, tz = (x + spacing // 2, z) if st.axis == "x" else (x, z + spacing // 2)
+                        if 0 <= tx < cv.w and 0 <= tz < cv.d and self.cell[tz, tx] == 1 and self.street_id[tz, tx] == sid \
+                                and cv.a[s, tz, tx] == 0:
+                            cv.a[s - 1, tz, tx] = I("coarse_dirt")
+                            tree(cv, tx, s, tz, self.rng, "avenue")
 
     def sewers(self):
         """Brick sewers under streets marked sewer=True: walkways either side of a channel, manholes."""
@@ -285,12 +315,14 @@ def tree(cv, x, y, z, rng, kind="oak"):
         log, leaf, h = "spruce_log", "spruce_leaves", rng.randint(4, 6)
     elif kind == "birch":
         log, leaf, h = "birch_log", "birch_leaves", rng.randint(5, 7)
+    elif kind == "avenue":
+        log, leaf, h = "oak_log", "oak_leaves", rng.randint(6, 7)
     else:
         log, leaf, h = "dark_oak_log", "dark_oak_leaves", rng.randint(5, 6)
     L = I(leaf, persistent="true")
     for dy in range(h):
         cv.set(x, y + dy, z, I(log, axis="y"))
-    r = 2 if kind != "yew" else 1
+    r = 2 if kind not in ("yew", "avenue") else 1
     top = y + h
     for dy in range(-2, 2):
         rr = r if dy < 1 else r - 1

@@ -213,9 +213,9 @@ def plan(g):
     A = g.add_street
     # arterial avenues (with sewers beneath)
     A(Street("Kingsway", "x", 175, 0, 639, "avenue", True))
-    A(Street("Harvest Avenue", "x", 345, 0, 639, "avenue", True))
+    A(Street("Harvest Avenue", "x", 345, 0, 639, "avenue", True, trees=True))
     A(Street("Lindon Road", "z", 110, 0, 639, "avenue", True))
-    A(Street("Grand Avenue", "z", 470, 84, 639, "avenue", True))
+    A(Street("Grand Avenue", "z", 470, 84, 639, "avenue", True, trees=True))
     A(Street("Iron Cross Street", "z", 590, 84, 639, "avenue", True))
     A(Street("Station Road", "z", 420, 104, 168, "avenue", True))
     # north
