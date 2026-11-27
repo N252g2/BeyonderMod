@@ -1597,3 +1597,95 @@ def ships(g, cv, rng, marks):
         placed += 1
         if placed == 1:
             marks["river"] = (x0 + vol.w // 2, s, z0 - 14, 0)
+
+
+# ---------------------------------------------------------------- the Nighthawks' underground
+
+
+@landmark
+def nighthawks_underground(g, cv, rng, marks):
+    """Under Blackthorn Security: a hidden ladder down to a tunnel beneath Zouteland Street and a vaulted hall
+    under the cathedral, with an armory, an archive, a duty room and the great sealed gate at its end."""
+    s = cv.street
+    lo, hi = s - 12, s - 6                 # floor and ceiling of the underground
+    BR = I("polished_blackstone_bricks")
+    WALL = I("deepslate_bricks")
+
+    def room(x0, z0, x1, z1, floor=None):
+        cv.a[lo:hi + 1, z0 - 1:z1 + 2, x0 - 1:x1 + 2] = WALL
+        cv.a[lo + 1:hi, z0:z1 + 1, x0:x1 + 1] = 0
+        for x in range(x0, x1 + 1):
+            for z in range(z0, z1 + 1):
+                cv.a[lo, z, x] = floor if floor is not None else (I("polished_deepslate") if (x + z) % 2 else BR)
+
+    # tunnel south under Zouteland Street, then west under the cathedral
+    room(405, 201, 407, 240)
+    room(393, 238, 407, 240)
+    # the shaft (after the tunnel, whose end wall it cuts through) inside the office, under a trapdoor in the floor
+    sx, sz = 406, 200
+    cv.a[s + 1, sz, sx] = I("spruce_trapdoor", half="top", facing="south", open="false")
+    for y in range(lo + 1, s + 1):
+        cv.a[y, sz, sx] = I("ladder", facing="south")
+    cv.a[lo:s + 1, sz - 1, sx] = WALL                       # wall the ladder hangs on
+    cv.a[lo, sz, sx] = WALL
+    for z in range(205, 238, 6):
+        cv.a[hi - 1, z, 406] = I("lantern", hanging="true")
+    # the duty room off the tunnel
+    room(396, 226, 403, 236)
+    cv.a[lo + 1:lo + 3, 231, 404] = 0
+    for x in (398, 401):
+        cv.a[lo + 1, 230:233, x] = I("dark_oak_fence")
+        cv.a[lo + 2, 230:233, x] = I("dark_oak_pressure_plate")
+        cv.a[lo + 1, 229, x] = I("dark_oak_stairs", facing="south")
+        cv.a[lo + 1, 233, x] = I("dark_oak_stairs", facing="north")
+    cv.a[lo + 3, 236, 399] = I("b:clock_face", facing="north")
+    cv.a[hi - 1, 231, 399] = I("lantern", hanging="true")
+    cv.a[lo + 1, 227, 396:399] = I("chest", facing="south")
+    # the hall: piers, vaulting, lanterns
+    hx0, hz0, hx1, hz1 = 368, 230, 392, 250
+    room(hx0, hz0, hx1, hz1)
+    for x in range(hx0 + 3, hx1, 5):
+        for z in (hz0 + 3, hz1 - 3):
+            cv.a[lo + 1:hi, z, x] = BR
+            cv.a[hi - 1, z + (1 if z < 240 else -1), x] = I("polished_blackstone_brick_stairs",
+                                                            facing="north" if z < 240 else "south", half="top")
+            cv.a[lo + 1, z + (1 if z < 240 else -1), x] = I("candle", candles="3", lit="true")
+        cv.a[hi - 1, 240, x] = I("chain") if False else cv.a[hi - 1, 240, x]
+        cv.a[hi - 1, 240, x] = I("lantern", hanging="true")
+    cv.a[lo + 1:lo + 4, 239:242, hx1 + 1] = 0               # opening from the tunnel
+    # the gate at the west end: a towering black door in a carved frame, candles before it
+    gx = hx0
+    cv.a[lo + 1:hi, hz0:hz1 + 1, gx] = BR
+    for z in range(236, 245):
+        for y in range(lo + 1, hi):
+            seam = z == 240
+            edge = z in (236, 244) or y == hi - 1
+            cv.a[y, z, gx] = I("chiseled_polished_blackstone") if seam or edge else I("polished_blackstone")
+    for z in (238, 242):
+        cv.a[lo + 3, z, gx + 1] = I("iron_bars")
+    for z in range(236, 245, 2):
+        cv.a[lo + 1, z, gx + 2] = I("candle", candles="4", lit="true")
+    cv.a[lo + 1, 240, gx + 3] = I("soul_lantern")
+    cv.sign(gx + 1, lo + 4, 240, S("dark_oak_wall_sign", facing="east"), ["", "CHANIS", "GATE", ""])
+    # armory to the north
+    room(374, 222, 386, 228)
+    cv.a[lo + 1:lo + 3, 229, 380] = 0
+    cv.a[lo + 1, 222, 374:387] = I("barrel", facing="south")
+    cv.a[lo + 2, 222, 374:387:2] = I("b:crate")
+    cv.a[lo + 1, 226, 376] = I("anvil", facing="north")
+    cv.a[lo + 1, 226, 378] = I("grindstone", face="floor", facing="north")
+    cv.a[lo + 1, 226, 380] = I("smithing_table")
+    cv.a[lo + 1, 228, 383:387] = I("chest", facing="north")
+    cv.a[hi - 1, 225, 380] = I("lantern", hanging="true")
+    # archive to the south
+    room(374, 252, 388, 260)
+    cv.a[lo + 1:lo + 3, 251, 380] = 0
+    for x in range(374, 389):
+        cv.a[lo + 1:hi, 260, x] = I("bookshelf")
+    for z in range(254, 260, 2):
+        cv.a[lo + 1:hi - 1, z, 374:378] = I("chiseled_bookshelf", facing="east")
+        cv.a[lo + 1:hi - 1, z, 384:389] = I("bookshelf")
+    cv.a[lo + 1, 253, 380] = I("lectern", facing="south")
+    cv.a[lo + 1, 256, 381] = I("cartography_table")
+    cv.a[hi - 1, 256, 380] = I("lantern", hanging="true")
+    marks["nighthawks"] = (385, lo + 1, 240, 90)

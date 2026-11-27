@@ -46,6 +46,7 @@ final class CityShots {
             new View("20d_asylum", "asylum", 0, 25, -16, 0, 22, 6000),
             new View("20e_gaol", "gaol", 0, 30, -16, 0, 28, 6000),
             new View("20f_ships", "river", 0, 12, 0, 0, 15, 6000),
+            new View("20g_nighthawks", "nighthawks", 0, 0.2, 0, 90, 0, 6000),
             new View("20_night_street", "daffodil", 0, 1.6, 0, -90, 2, 18000),
             new View("21_night_plaza", "cathedral", 9, 3, 26, 160, -10, 18000),
             new View("22_sewer", "sewer", 0, 0.1, 0, 90, 0, 6000),
