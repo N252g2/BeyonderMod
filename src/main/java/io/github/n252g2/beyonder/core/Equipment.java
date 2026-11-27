@@ -32,29 +32,29 @@ import io.github.n252g2.beyonder.item.CrimsonGreatswordItem;
  * and the off hand shows the sidearm. Scrolling the hotbar puts them away.</p>
  */
 public final class Equipment {
-    public static final TagKey<Item> WEAPONS = tag("weapons");
-    public static final TagKey<Item> AMMO = tag("ammo");
-    public static final TagKey<Item> BELT = tag("belt");
+    public static final TagKey<Item> WEAPONS = EquipmentTags.WEAPONS;
+    public static final TagKey<Item> AMMO = EquipmentTags.AMMO;
+    public static final TagKey<Item> BELT = EquipmentTags.BELT;
 
     /** One slot of the Beyonder equipment; {@code x, y} place it in the inventory screen. */
     public enum Slot {
-        HAT("Hat", "hat", tag("clothing/hat"), 1, -24, 8),
-        SHIRT("Shirt or waistcoat", "shirt", tag("clothing/shirt"), 1, -42, 26),
-        COAT("Coat", "coat", tag("clothing/coat"), 1, -24, 26),
-        GLOVES("Gloves", "gloves", tag("clothing/gloves"), 1, -42, 44),
-        TROUSERS("Trousers or skirt", "trousers", tag("clothing/trousers"), 1, -24, 44),
-        SHOES("Shoes", "shoes", tag("clothing/shoes"), 1, -24, 62),
-        WEAPON("Main weapon", "weapon", WEAPONS, 1, 96, 62),
-        AMMO_1("Ammo pouch", "ammo", AMMO, 64, 128, 62),
-        AMMO_2("Ammo pouch", "ammo", AMMO, 64, 146, 62),
-        RING_1("Ring", "ring", tag("accessories/ring"), 1, 184, 8),
-        RING_2("Ring", "ring", tag("accessories/ring"), 1, 184, 26),
-        AMULET("Amulet", "amulet", tag("accessories/amulet"), 1, 184, 44),
-        CHARM("Charm or pocket watch", "charm", tag("accessories/charm"), 1, 184, 62),
-        ARTIFACT("Sealed Artifact", "artifact", tag("worn_artifacts"), 1, 206, 8),
-        BELT_1("Potion belt", "belt", BELT, 16, 206, 30),
-        BELT_2("Potion belt", "belt", BELT, 16, 206, 48),
-        BELT_3("Potion belt", "belt", BELT, 16, 206, 66);
+        HAT("Hat", "hat", EquipmentTags.tag("clothing/hat"), 1, -24, 8),
+        SHIRT("Shirt or waistcoat", "shirt", EquipmentTags.tag("clothing/shirt"), 1, -42, 26),
+        COAT("Coat", "coat", EquipmentTags.tag("clothing/coat"), 1, -24, 26),
+        GLOVES("Gloves", "gloves", EquipmentTags.tag("clothing/gloves"), 1, -42, 44),
+        TROUSERS("Trousers or skirt", "trousers", EquipmentTags.tag("clothing/trousers"), 1, -24, 44),
+        SHOES("Shoes", "shoes", EquipmentTags.tag("clothing/shoes"), 1, -24, 62),
+        WEAPON("Main weapon", "weapon", EquipmentTags.WEAPONS, 1, 96, 62),
+        AMMO_1("Ammo pouch", "ammo", EquipmentTags.AMMO, 64, 128, 62),
+        AMMO_2("Ammo pouch", "ammo", EquipmentTags.AMMO, 64, 146, 62),
+        RING_1("Ring", "ring", EquipmentTags.tag("accessories/ring"), 1, 184, 8),
+        RING_2("Ring", "ring", EquipmentTags.tag("accessories/ring"), 1, 184, 26),
+        AMULET("Amulet", "amulet", EquipmentTags.tag("accessories/amulet"), 1, 184, 44),
+        CHARM("Charm or pocket watch", "charm", EquipmentTags.tag("accessories/charm"), 1, 184, 62),
+        ARTIFACT("Sealed Artifact", "artifact", EquipmentTags.tag("worn_artifacts"), 1, 206, 8),
+        BELT_1("Potion belt", "belt", EquipmentTags.BELT, 16, 206, 30),
+        BELT_2("Potion belt", "belt", EquipmentTags.BELT, 16, 206, 48),
+        BELT_3("Potion belt", "belt", EquipmentTags.BELT, 16, 206, 66);
 
         public static final Slot[] CLOTHING = {HAT, SHIRT, COAT, GLOVES, TROUSERS, SHOES};
         public static final Slot[] BELTS = {BELT_1, BELT_2, BELT_3};
@@ -94,7 +94,7 @@ public final class Equipment {
                 case WEAPON -> isWeapon(stack);
                 // Sequence potions are drunk with care, not from a belt
                 case BELT_1, BELT_2, BELT_3 -> !(stack.getItem() instanceof BeyonderPotionItem)
-                        && (stack.is(BELT) || stack.getItem() instanceof PotionItem || stack.has(DataComponents.FOOD));
+                        && (stack.is(EquipmentTags.BELT) || stack.getItem() instanceof PotionItem || stack.has(DataComponents.FOOD));
                 default -> stack.is(tag);
             };
         }
@@ -103,10 +103,6 @@ public final class Equipment {
     public static final int SIZE = Slot.values().length;
 
     private Equipment() {}
-
-    private static TagKey<Item> tag(String path) {
-        return TagKey.create(Registries.ITEM, Beyonder.id(path));
-    }
 
     public static EquipmentData get(Player player) {
         return player.getData(BeyonderAttachments.EQUIPMENT);
