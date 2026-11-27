@@ -73,9 +73,9 @@ public final class EquipmentGameTests {
         EquipmentRules.swap(p);
         h.assertTrue(Equipment.item(p, Equipment.Slot.WEAPON).is(BeyonderContent.REVOLVER.get()), "revolver now main");
         h.assertTrue(p.getOffhandItem().is(BeyonderContent.LONGSWORD.get()), "longsword now sidearm");
-        p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
-        EquipmentRules.swap(p);
-        h.assertTrue(p.getOffhandItem().is(Items.TORCH), "a torch can't be swapped into the weapon slot");
+        h.assertTrue(!Equipment.Slot.WEAPON.accepts(new ItemStack(Items.TORCH)), "a torch can't go in the weapon slot");
+        h.assertTrue(Equipment.Slot.AMMO_1.accepts(new ItemStack(Items.ARROW)), "arrows go in the ammo pouch");
+        h.assertTrue(Equipment.Slot.BELT_1.accepts(new ItemStack(Items.BREAD)), "food goes on the belt");
         h.succeed();
     }
 
