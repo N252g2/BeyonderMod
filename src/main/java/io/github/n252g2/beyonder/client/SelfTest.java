@@ -179,8 +179,11 @@ public final class SelfTest {
                 mc.options.hideGui = false;
                 mc.player.getInventory().selected = 4; // an empty hand, so the arm (and its sleeve) shows
             }
-            case 404 -> shot(mc, "24_first_person_sleeves");
-            case 410 -> mc.stop();
+            case 430 -> {
+                org.slf4j.LoggerFactory.getLogger("beyonder-selftest").info("main hand for the sleeve shot: {}", mc.player.getMainHandItem());
+                shot(mc, "24_first_person_sleeves");
+            }
+            case 440 -> mc.stop();
             default -> {}
         }
     }
