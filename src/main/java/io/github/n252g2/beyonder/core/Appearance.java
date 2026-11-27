@@ -12,14 +12,16 @@ public final class Appearance {
     public enum Slot {
         SKIN("Skin tone", List.of("Porcelain", "Fair", "Rose", "Olive", "Tan", "Bronze", "Brown", "Deep")),
         EYES("Eyes", List.of("Grey", "Blue", "Green", "Hazel", "Brown", "Dark", "Amber", "Violet")),
-        BROWS("Brows", List.of("Straight", "Arched", "Heavy")),
+        BROWS("Brows", List.of("Straight", "Arched", "Heavy", "None")),
         HAIR("Hair", List.of("Short and neat", "Side parting", "Slicked back", "Tousled", "Curly",
                 "Bob", "Long, tied back", "Long and loose", "Close-cropped")),
         HAIR_COLOR("Hair colour", List.of("Black", "Dark brown", "Brown", "Chestnut", "Auburn", "Copper",
                 "Fair", "Platinum", "Grey", "White")),
         FACIAL_HAIR("Facial hair", List.of("None", "Stubble", "Moustache", "Mutton chops", "Full beard")),
         BUILD("Build", List.of("Broad", "Slender")),
-        CLOTHES("Clothes", List.of("Charcoal", "Navy", "Brown", "Burgundy", "Bottle green"));
+        CLOTHES("Clothes", List.of("Charcoal", "Navy", "Brown", "Burgundy", "Bottle green")),
+        // added after the first characters were saved, so it goes last in storage; ORDER shows it by the eyes
+        EYE_SHAPE("Eye shape", List.of("Classic", "Bright", "Lashed", "Soft", "Narrow"));
 
         private final String label;
         private final List<String> options;
@@ -44,10 +46,14 @@ public final class Appearance {
 
     public static final int SIZE = Slot.values().length;
 
+    /** The order the creator lists the choices in. */
+    public static final List<Slot> ORDER = List.of(Slot.SKIN, Slot.EYES, Slot.EYE_SHAPE, Slot.BROWS, Slot.HAIR,
+            Slot.HAIR_COLOR, Slot.FACIAL_HAIR, Slot.BUILD, Slot.CLOTHES);
+
     private Appearance() {}
 
     public static int[] defaults() {
-        return new int[] {1, 0, 0, 0, 1, 0, 0, 0};
+        return new int[] {1, 0, 0, 0, 1, 0, 0, 0, 0};
     }
 
     public static int[] random(RandomSource random) {

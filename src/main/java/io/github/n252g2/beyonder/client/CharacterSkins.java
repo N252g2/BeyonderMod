@@ -108,8 +108,11 @@ public final class CharacterSkins {
         boolean slim = Appearance.slim(a);
         List<String> parts = new ArrayList<>();
         parts.add(slim ? "base_slim" : "base_wide");
-        parts.add("face");
-        parts.add("brows_" + Appearance.get(a, Slot.BROWS));
+        parts.add("face_" + Appearance.get(a, Slot.EYE_SHAPE));
+        int brows = Appearance.get(a, Slot.BROWS);
+        if (brows != 3) {          // 3 = none
+            parts.add("brows_" + brows);
+        }
         int facial = Appearance.get(a, Slot.FACIAL_HAIR);
         if (facial > 0) {
             parts.add("facial_" + facial);

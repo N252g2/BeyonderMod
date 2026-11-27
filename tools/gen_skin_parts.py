@@ -227,23 +227,34 @@ def base(slim):
     P.save("base_slim" if slim else "base_wide")
 
 
-def face_part():
-    """Eyes and mouth: a dark lash line, then white + iris (iris towards the nose), then the lips."""
+EYE_STYLES = {
+    # one eye, outer pixel first, rows 5 and 6 (the right eye is mirrored). Two pixels wide, one or two
+    # tall, as in community skins: a dark lid line over white + iris, the iris towards the nose.
+    0: (["LL", "wi"], {"i": (IRIS, 3)}),                       # classic
+    1: (["wI", "wi"], {"I": (IRIS, 1), "i": (IRIS, 4)}),       # bright: tall iris, dark under the lid
+    2: (["LL", "wi"], {"i": (IRIS, 3)}),                       # lashed: plus a flick at the outer corner
+    3: (["dd", "wi"], {"i": (IRIS, 2)}),                       # soft: a skin-toned lid, no dark line
+    4: (["ee", "Li"], {"i": (IRIS, 2)}),                       # narrow: one row, hooded lid above
+}
+
+
+def face_part(style):
+    """Eyes and mouth for one eye shape."""
     P = Part()
-    rows = [
-        "........",
-        "........",
-        "........",
-        "........",
-        "........",
-        ".LI..IL.",
-        ".wi..iw.",
-        "...mm...",
-    ]
-    # eyes sit low: a dark lid line over the white, the iris (darker under the lid) towards the nose
-    grid(P, HEAD, "front", rows, {"L": (LASH, 1), "I": (IRIS, 1), "w": (WHITE, 4), "i": (IRIS, 3), "m": (LIP, 3)})
-    # the iris is a little lighter at the bottom: use a brighter shade on the outer layer? keep it simple
-    P.save("face")
+    fx, fy, _, _ = HEAD.rect("front")
+    rows, extra = EYE_STYLES[style]
+    legend = {"L": (LASH, 1), "w": (WHITE, 4), "d": (SKIN, 1), "e": (SKIN, 2)}
+    legend.update(extra)
+    for y, row in enumerate(rows):
+        for i, ch in enumerate(row):
+            for x in (1 + i, 6 - i):                  # left eye outer col 1, right eye outer col 6
+                P.set(fx + x, fy + 5 + y, *legend[ch])
+    if style == 2:
+        P.set(fx + 0, fy + 5, LASH, 1)
+        P.set(fx + 7, fy + 5, LASH, 1)
+    P.set(fx + 3, fy + 7, LIP, 3)
+    P.set(fx + 4, fy + 7, LIP, 3)
+    P.save(f"face_{style}")
 
 
 def brows(style):
@@ -259,105 +270,142 @@ def brows(style):
 
 # ---------------------------------------------------------------- hair
 
-def hair_shade(x, y, length, w, top_row=0, clump=3, shine=(1, 2)):
-    """Classic hair shading for a column of hair: shine near the top, darker tips, clump lines."""
+def strand(u, y, length, clump=3, shine=(1, 2)):
+    """Hair as clumps of strands. `u` runs all the way round the head (right side, front, left side,
+    back) so the clumps carry over the edges. Each clump is lit in the middle, has a dark gap on one
+    side, a shine band near the top and darker tips."""
+    k = u % clump
     s = 3
-    if y in shine:
-        s = 5 if (x // clump) % 2 == 0 else 4
-    if (x % clump) == clump - 1:
-        s -= 1                              # the gap between clumps
-    if y == length - 1:
-        s = 2                               # tips
-    if y == length - 1 and (x % clump) == clump - 1:
+    if k == 0:
+        s = 4 if y in shine else 3
+    if k == clump - 1:
+        s = 2                                   # the gap between clumps
+    if y in shine and k == 1 % clump and clump > 1:
+        s = 5
+    if y >= length - 1:
+        s = max(1, s - 1)                       # tips
+    if y >= length - 1 and k == clump - 1:
         s = 1
-    return max(1, s)
+    return s
+
+
+# around-the-head column of each face's x (0 = back edge of the right side)
+def around(face, x):
+    return {"right": x, "front": 8 + x, "left": 16 + x, "back": 24 + x}[face]
+
+
+FRONTS = {
+    # H hair, '.' skin. Tips end in points; partings show forehead.
+    0: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHH.HH.H", "H......H"],                       # short and neat
+    1: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHH.HH", "HHH....H", "HH.....H"],            # side parting
+    2: ["HHHHHHHH", "HHHHHHHH", "H.HHHH.H", "H......H"],                                   # slicked back
+    3: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H.HH.HHH", "H..H...H", "H......H"],            # tousled
+    4: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HH.HH.HH", "H......H", "H......H"],            # curly
+    5: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H.H..H.H", "H......H", "H......H", "H......H"],  # bob
+    6: ["HHHHHHHH", "HHHHHHHH", "HHH..HHH", "HH....HH", "H......H", "H......H"],            # tied back, centre part
+    7: ["HHHHHHHH", "HHHHHHHH", "HHH..HHH", "HH....HH", "H......H", "H......H", "H......H", "H......H"],  # long, loose
+    8: ["HHHHHHHH", "HHHHHHHH"],                                                           # close-cropped
+}
+SIDES = {0: [6, 6, 6, 5, 4, 4, 5, 5], 1: [6, 6, 6, 5, 5, 4, 5, 6], 2: [6, 6, 6, 5, 4, 3, 3, 4],
+         3: [6, 6, 6, 6, 5, 5, 5, 6], 4: [6, 6, 6, 6, 6, 5, 5, 6], 5: [8, 8, 8, 8, 8, 8, 8, 8],
+         6: [7, 7, 6, 6, 5, 4, 5, 6], 7: [8, 8, 8, 8, 8, 8, 8, 8], 8: [3, 3, 3, 3, 3, 2, 2, 2]}
+BACK = {0: 6, 1: 6, 2: 7, 3: 7, 4: 7, 5: 8, 6: 8, 7: 8, 8: 4}
+PARTING = {1: 5, 6: 4, 7: 4, 5: 4}          # top-face column of the parting
 
 
 def hair_part(style):
     P = Part()
     H = lambda s: (HAIR, s)
-    # front templates: H hair; S hair's shadow on the forehead (skin, darker)
-    fronts = {
-        0: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HH.HHH.H", "H......H", "S......S"],
-        1: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHHH.H", "HHH....H", "H......S"],
-        2: ["HHHHHHHH", "HHHHHHHH", "H.HHHH.H", "S......S"],
-        3: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H.HHH.HH", "H..H...H", "H......H"],
-        4: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HH.HH.HH", "H......H", "H......H"],
-        5: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H......H", "H......H", "H......H", "H......H"],
-        6: ["HHHHHHHH", "HHHHHHHH", "HH.HH.HH", "H......H", "H......H", "S......S"],
-        7: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHH..HHH", "HH....HH", "H......H", "H......H", "H......H"],
-        8: ["HHHHHHHH", "HHHHHHHH", "S......S"],
-    }
-    # lengths of hair down the sides (back of head -> face) and down the back (across)
-    sides = {0: [6, 6, 6, 5, 4, 4, 5, 5], 1: [6, 6, 6, 5, 5, 4, 5, 6], 2: [6, 6, 6, 5, 4, 3, 3, 4],
-             3: [6, 6, 6, 6, 5, 5, 5, 6], 4: [6, 6, 6, 6, 6, 5, 5, 6], 5: [8, 8, 8, 8, 8, 8, 8, 8],
-             6: [8, 8, 7, 6, 5, 4, 5, 6], 7: [8, 8, 8, 8, 8, 8, 8, 8], 8: [3, 3, 3, 3, 3, 2, 2, 2]}[style]
-    back = {0: 6, 1: 6, 2: 7, 3: 7, 4: 7, 5: 8, 6: 8, 7: 8, 8: 4}[style]
     cropped = style == 8
+    curly = style == 4
+    clump = 2 if curly else 3
+    sides, back = SIDES[style], BACK[style]
 
+    def shade(u, y, length):
+        if cropped:                             # short and even, with a faint grain
+            return 2 if (2 * u + y) % 5 == 0 else 3
+        if curly:                               # curls: little lit loops rather than long strands
+            return 4 if (u + y) % 3 == 0 else (2 if (u + 2 * y) % 3 == 0 else 3)
+        return strand(u, y, length, clump)
+
+    # ---- front: fringe with pointed tips, a shadow on the forehead under it
     fx, fy, _, _ = HEAD.rect("front")
-    rows = fronts[style]
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row):
-            if ch == "H":
-                # fringe: lighter on top, tips darker where the hair ends above skin
-                below = rows[y + 1][x] if y + 1 < len(rows) else "."
-                s = 2 if cropped else (4 if y == 0 else 3)
-                if below != "H":
-                    s = 2
-                if not cropped and y == 0 and x % 3 == 1:
-                    s = 5
-                P.set(fx + x, fy + y, HAIR, s)
-            elif ch == "S":
-                P.set(fx + x, fy + y, SKIN, 2)
+    rows = FRONTS[style]
+    for x in range(8):
+        col = [y for y, r in enumerate(rows) if r[x] == "H"]
+        length = (max(col) + 1) if col else 0
+        for y in col:
+            P.set(fx + x, fy + y, *H(shade(around("front", x), y, length)))
+        if length and length <= 4 and length < len(rows) + 1 and not cropped:
+            P.set(fx + x, fy + length, SKIN, 2)  # the hair's shadow
+    for y in range(len(rows), 4):
+        pass
 
+    # ---- sides and back: strands, ragged ends
     for side in ("right", "left"):
         def sf(x, y, w, h, side=side):
             col = x if side == "right" else w - 1 - x      # 0 = back of the head
-            length = sides[col]
-            if y >= length:
-                return None
-            if cropped:
-                return H(2 if (x + y) % 2 else 3)
-            return H(hair_shade(x, y, length, w))
+            u = around(side, x)
+            length = sides[col] - (1 if not cropped and u % clump == clump - 1 and sides[col] < 8 else 0)
+            return H(shade(u, y, length)) if y < length else None
         paint(P, HEAD, side, sf)
 
     def bf(x, y, w, h):
-        length = back - (1 if x in (0, 7) and back < 8 else 0)
-        if y >= length:
-            return None
-        if cropped:
-            return H(2 if (x + y) % 2 else 3)
-        return H(hair_shade(x, y, length, w))
+        u = around("back", x)
+        length = back - (1 if x in (0, 7) and back < 8 else 0) - (1 if not cropped and u % clump == clump - 1 and back < 8 else 0)
+        return H(shade(u, y, length)) if y < length else None
     paint(P, HEAD, "back", bf)
+
+    # ---- top: strands combed away from a parting (or from the crown), lit next to it
+    part = PARTING.get(style)
 
     def tf(x, y, w, h):
         if cropped:
-            return H(3 if (x + y) % 2 else 2)
+            return H(4 if (x + 2 * y) % 7 == 0 else 2 if (2 * x + y) % 5 == 0 else 3)
+        if curly:
+            return H(4 if (x + y) % 3 == 0 else (2 if (x + 2 * y) % 3 == 0 else 3))
+        if part is not None:
+            if x == part and y >= 2:
+                return (SKIN, 2)                  # the parting itself
+            d = abs(x - part)
+            s = 5 if d == 1 and y % 3 != 0 else 4 if d <= 2 else 3
+            if (y + x) % 3 == 0 and d > 1:
+                s -= 1                            # strand lines running front to back
+            if x in (0, 7):
+                s = 2
+            return H(max(1, s))
+        # crown whorl towards the back, strands radiating forward
         s = 3
-        if 2 <= x <= 5 and 2 <= y <= 5:
+        if 2 <= x <= 5 and 1 <= y <= 4:
             s = 4
-        if (x, y) in ((3, 3), (4, 3), (3, 4)):
+        if (x, y) in ((3, 2), (4, 2), (4, 3)):
             s = 5
-        if x in (0, 7) or y in (0, 7):
+        if (x + y) % 3 == 0 and s < 5:
+            s -= 1
+        if x in (0, 7) or y == 0:
             s = 2
-        if style == 1 and x == 5:
-            return (SKIN, 2)                      # the parting
-        if style == 2 and x % 2 == 0 and 1 <= y <= 6:
-            s = min(5, s + 1)                     # combed lines
-        return H(s)
+        return H(max(1, s))
     paint(P, HEAD, "top", tf)
 
-    # ---- outer layer: volume
+    # ---- outer layer: 3D locks that frame the face and give the fringe some lift
     hx, hy, _, _ = HAT.rect("front")
-    if not cropped and style not in (3, 4, 5, 7):
+    if not cropped:
+        # fringe lift: the top edge stands proud, with a few tips
         for x in range(8):
             if x % 3 != 2:
                 P.set(hx + x, hy, HAIR, 4 if x % 3 == 0 else 3)
-        for x in (0, 7):
-            P.set(hx + x, hy + 1, HAIR, 3)
-            P.set(hx + x, hy + 2, HAIR, 2)
         paint(P, HAT, "top", lambda x, y, w, h: H(4 if (x + y) % 4 == 0 else 3) if (x in (0, 7) or y in (0, 7)) else None)
+        # side locks at the edges of the face (cols 0 and 7 keep clear of the eyes)
+        lock = {0: 2, 1: 5, 2: 1, 3: 4, 4: 4, 5: 7, 6: 5, 7: 7}[style]
+        for y in range(1, lock + 1):
+            for x in (0, 7):
+                P.set(hx + x, hy + y, HAIR, 2 if y == lock else 3)
+        if style in (6, 7, 5):  # the parted fringe falls either side of the parting
+            for x, y in ((2, 1), (5, 1), (1, 2), (6, 2), (1, 3), (6, 3)):
+                P.set(hx + x, hy + y, HAIR, 3 if y < 3 else 2)
+        if style == 1:          # the swept side hangs over the brow
+            for x, y in ((1, 1), (2, 1), (3, 1), (1, 2), (2, 2), (1, 3)):
+                P.set(hx + x, hy + y, HAIR, 4 if y == 1 else 3 if y == 2 else 2)
     if style in (3, 4):  # tousled and curly: tufts that stand out
         tuft = ["H.HHH.HH", "..H...H."] if style == 3 else ["HH.HHH.H", "H..H..HH", "..H..H.."]
         for y, row in enumerate(tuft):
@@ -367,24 +415,23 @@ def hair_part(style):
         paint(P, HAT, "top", lambda x, y, w, h: H(4 if (x + y) % 3 == 0 else 3) if (style == 4 or (x * 3 + y) % 4 == 0) else None)
         for f in ("right", "left", "back"):
             paint(P, HAT, f, lambda x, y, w, h: H(2 if y == 2 else 3) if y <= (3 if style == 4 else 1) and (style == 4 or x % 2 == 0) else None)
-    if style in (5, 7):  # bob and long hair: a full outer shell
+    if style in (5, 7):  # bob and long hair: a full outer shell with ragged ends
         length = 7 if style == 5 else 8
         for f in ("right", "left", "back"):
             def shell(x, y, w, h, f=f):
-                if y >= length:
+                u = around(f, x)
+                ln = length - (1 if u % 2 == 1 and length < 8 else 0)
+                if y >= ln:
                     return None
                 if f != "back":
                     col = x if f == "right" else w - 1 - x
                     if col == 7 and y >= 2:
                         return None        # keep the face clear
-                return H(hair_shade(x, y, length, w, clump=2))
+                return H(strand(u, y, ln, clump=2))
             paint(P, HAT, f, shell)
-        paint(P, HAT, "top", lambda x, y, w, h: H(4 if 2 <= x <= 5 and 2 <= y <= 5 else 3))
-        for y in range(3):
-            for x in (0, 7):
-                P.set(hx + x, hy + y + 1, HAIR, 3)
-    if style == 7:       # down the back
-        paint(P, BODY, "back", lambda x, y, w, h: H(hair_shade(x, y, 6, w, clump=2)) if y < 6 and 1 <= x <= 6 else None)
+        paint(P, HAT, "top", lambda x, y, w, h: (SKIN, 2) if x == 4 and y >= 3 else H(4 if abs(x - 4) == 1 else 3))
+    if style == 7:       # down the back, ending in points
+        paint(P, BODY, "back", lambda x, y, w, h: H(strand(x, y, 6 - (x % 2), clump=2)) if y < 6 - (x % 2) and 1 <= x <= 6 else None)
     if style == 6:       # a tail tied with a dark ribbon
         paint(P, BODY, "back", lambda x, y, w, h: H(4 if y == 1 else 3 if y < 4 else 2) if 3 <= x <= 4 and y < 5 else None)
         bx, by, _, _ = HAT.rect("back")
@@ -473,7 +520,7 @@ def shift(h, target, amount):
 
 
 def palettes(app):
-    skin_i, eyes_i, brows_i, hair_i, hc_i, fh_i, build_i, cloth_i = app
+    skin_i, eyes_i, brows_i, hair_i, hc_i, fh_i, build_i, cloth_i, eye_i = app
     skin, hair, cloth = SKIN_C[skin_i], HAIR_C[hc_i], CLOTH_C[cloth_i]
     trousers = tuple(int(c * 0.6 + 24 * 0.4) for c in cloth)
     lip = tuple(int(a * 0.72 + b * 0.28) for a, b in zip(skin, (170, 60, 64)))
@@ -486,9 +533,9 @@ def palettes(app):
 
 
 def compose(app):
-    skin_i, eyes_i, brows_i, hair_i, hc_i, fh_i, build_i, cloth_i = app
+    skin_i, eyes_i, brows_i, hair_i, hc_i, fh_i, build_i, cloth_i, eye_i = app
     pal = palettes(app)
-    parts = ["base_slim" if build_i else "base_wide", "face", f"brows_{brows_i}"]
+    parts = ["base_slim" if build_i else "base_wide", f"face_{eye_i}"] + ([f"brows_{brows_i}"] if brows_i != 3 else [])
     if fh_i:
         parts.append(f"facial_{fh_i}")
     parts.append(f"hair_{hair_i}")
@@ -508,7 +555,8 @@ def compose(app):
 def main():
     for slim in (False, True):
         base(slim)
-    face_part()
+    for e in EYE_STYLES:
+        face_part(e)
     for b in (0, 1, 2):
         brows(b)
     for h in range(9):
@@ -519,8 +567,9 @@ def main():
     if "--preview" in sys.argv:
         out = sys.argv[sys.argv.index("--preview") + 1]
         os.makedirs(out, exist_ok=True)
-        samples = [(1, 1, 0, 0, 1, 0, 0, 0), (3, 4, 2, 2, 0, 4, 0, 2), (0, 1, 1, 5, 6, 0, 1, 3), (6, 5, 0, 4, 0, 1, 0, 1),
-                   (2, 2, 1, 7, 4, 0, 1, 4), (4, 3, 0, 6, 3, 3, 0, 0), (5, 0, 2, 8, 8, 2, 0, 2), (1, 6, 1, 3, 5, 0, 1, 1)]
+        samples = [(1, 1, 0, 0, 1, 0, 0, 0, 0), (3, 4, 2, 2, 0, 4, 0, 2, 4), (0, 1, 1, 5, 6, 0, 1, 3, 2), (6, 5, 0, 4, 0, 1, 0, 1, 3),
+                   (2, 2, 3, 7, 4, 0, 1, 4, 1), (4, 3, 0, 6, 3, 3, 0, 0, 0), (5, 0, 2, 8, 8, 2, 0, 2, 4), (1, 6, 1, 3, 5, 0, 1, 1, 2),
+                   (2, 1, 0, 1, 2, 0, 0, 3, 1)]
         for i, s in enumerate(samples):
             compose(s).save(os.path.join(out, f"skin{i}{'_slim' if s[6] else ''}.png"))
 
