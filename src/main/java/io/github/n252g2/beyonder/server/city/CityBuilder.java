@@ -210,7 +210,11 @@ public final class CityBuilder extends SavedData {
                 pos.set(baseX + x, oy + y, baseZ + z);
                 if (phase == 1) {
                     BlockState want = c.fluid[id] ? air : c.palette[id];
-                    if (lc.getBlockState(pos) != want) {
+                    BlockState cur = lc.getBlockState(pos);
+                    if (cur != want) {
+                        if (cur.hasBlockEntity()) {
+                            level.removeBlockEntity(pos);       // no spilling the chests of whatever stood here
+                        }
                         level.setBlock(pos, want, FLAGS);
                         placed++;
                     }

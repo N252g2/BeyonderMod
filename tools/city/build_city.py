@@ -287,7 +287,9 @@ def main():
     for k, val in {"daffodil": (60, s, 240, -90), "confluence": (306, s, 455, 180), "station": (420, s, 95, 180),
                    "iron_cross": (590, s, 250, 180), "golden": (390, s, 380, 180), "villas": (240, s, 600, 180),
                    "university": (175, s, 90, 180), "market": (505, s, 230, 180), "cemetery": (530, s, 570, 180),
-                   "sewer": (200, s - 6, 177, 90), "works": (570, s, 125, 180)}.items():
+                   "sewer": (200, s - 6, 177, 90), "works": (570, s, 125, 180),
+                   "shed": (500, s + 1, 34, 90), "market_view": (504, s + 26, 262, 180),
+                   "docks_view": (568, s + 12, 505, 180)}.items():
         marks.setdefault(k, val)
     print(f"generated in {time.time() - t0:.1f}s, palette {len(P.states)}")
     bad = export.check_palette()

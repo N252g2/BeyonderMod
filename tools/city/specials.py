@@ -786,14 +786,16 @@ def gate_tower(rng, w, d, h, wall, trim, roof):
         v.fill(xc, y, 0, xc, y + 2, 0, pt.LIT if rng.random() < 0.5 else pt.WINDOW)
         v.fill(xc, y, d - 1, xc, y + 2, d - 1, pt.WINDOW)
     v.set(xc, h - 3, 0, S("b:clock_face", facing="north"))
-    # battlements and corner turrets
+    # battlements between square corner turrets, each with a little pyramid cap
     for x in range(w):
         for z in range(d):
             if x in (0, w - 1) or z in (0, d - 1):
-                v.set(x, h + 1, z, trim.block if (x + z) % 2 == 0 else AIR)
-    for x, z in ((0, 0), (w - 1, 0), (0, d - 1), (w - 1, d - 1)):
-        v.fill(x, h + 1, z, x, h + 4, z, trim.block)
-        v.set(x, h + 5, z, trim.slab("bottom"))
+                v.set(x, h + 1, z, wall.block if (x + z) % 2 == 0 else AIR)
+    v.fill(0, h, 0, w - 1, h, 0, trim.stairs("south", "top"))
+    for x, z in ((0, 0), (w - 2, 0), (0, d - 2), (w - 2, d - 2)):
+        v.fill(x, h - 4, z, x + 1, h + 3, z + 1, wall.block)
+        v.fill(x, h + 4, z, x + 1, h + 4, z + 1, trim.slab("bottom"))
+        v.set(x, h + 5, z, roof.stairs("south")) if False else None
     return v
 
 
@@ -1464,3 +1466,134 @@ def civic(g, cv, rng, marks):
         cv.stamp(v, x, z, facing=facing)
         reserve(g, x, z, x + fw - 1, z + fd - 1)
         marks[key] = (x + fw // 2, s, z + (fd + 4 if facing == "south" else -4), 0 if facing == "south" else 180)
+
+
+# ---------------------------------------------------------------- ships on the Tussock
+
+
+def steamer(rng, L=46, B=11, funnel="red_terracotta"):
+    """A paddle-less screw steamer, bow to the east (+x): black hull with a red boot-top, white deckhouse,
+    two funnels, masts. y=0 is the keel; the deck is at y=7."""
+    v = Vol(L, 26, B)
+    cz = B // 2
+    deck = 7
+    def half(x):
+        if x < 0 or x >= L:
+            return -1
+        if x < 3:
+            return 3 + x
+        if x > L - 10:
+            return max(0, int(round(5 * ((L - 1 - x) / 9.0) ** 0.7)))
+        return 5
+
+    for x in range(L):
+        hw = half(x)
+        for y in range(0, deck + 1):
+            # sections narrow toward the keel
+            shrink = 2 if y == 0 else 1 if y == 1 else 0
+            w = hw - shrink
+            if w < 0:
+                continue
+            wn, wp = half(x + 1) - shrink, half(x - 1) - shrink
+            for z in range(cz - w, cz + w + 1):
+                off = abs(z - cz)
+                edge = off == w or y == 0 or off > wn or off > wp
+                if y == deck:
+                    v.set(x, y, z, S("spruce_planks") if off < w else S("b:dark_timber", axis="x"))
+                elif edge:
+                    v.set(x, y, z, S("red_terracotta") if y <= 3 else (S("polished_blackstone") if y < deck - 1 else S("white_terracotta")))
+                else:
+                    v.set(x, y, z, AIR)
+        # railings on the deck edge
+        if hw > 0:
+            for z in (cz - hw, cz + hw):
+                v.set(x, deck + 1, z, S("iron_bars"))
+    # bow: a raised forecastle and a bowsprit
+    for x in range(L - 9, L):
+        for z in range(B):
+            if v.get(x, deck, z) not in (KEEP, 0):
+                v.set(x, deck + 1, z, S("spruce_slab", type="bottom") if v.get(x, deck + 1, z) != S("iron_bars") else S("iron_bars"))
+    v.fill(L - 1, deck + 1, cz, L - 1, deck + 1, cz, S("b:dark_timber", axis="x"))
+    # deckhouse with windows, the bridge above it
+    hx0, hx1 = 14, 31
+    v.fill(hx0, deck + 1, cz - 3, hx1, deck + 3, cz + 3, S("white_terracotta"))
+    v.fill(hx0 + 1, deck + 1, cz - 2, hx1 - 1, deck + 2, cz + 2, AIR)
+    for x in range(hx0 + 1, hx1, 2):
+        v.set(x, deck + 2, cz - 3, S("glass_pane")); v.set(x, deck + 2, cz + 3, S("glass_pane"))
+    v.fill(hx0, deck + 4, cz - 3, hx1, deck + 4, cz + 3, S("spruce_slab", type="bottom"))
+    v.fill(hx1 - 5, deck + 4, cz - 2, hx1, deck + 6, cz + 2, S("white_terracotta"))
+    v.fill(hx1 - 5, deck + 5, cz - 2, hx1, deck + 5, cz + 2, S("glass_pane"))
+    v.fill(hx1 - 5, deck + 7, cz - 2, hx1, deck + 7, cz + 2, S("spruce_slab", type="bottom"))
+    v.set(hx1 - 2, deck + 4, cz, AIR)
+    # funnels: red with a black top
+    for fx in (19, 25):
+        v.fill(fx, deck + 4, cz - 1, fx + 1, deck + 12, cz, S(funnel))
+        v.fill(fx, deck + 13, cz - 1, fx + 1, deck + 14, cz, S("black_terracotta"))
+        v.set(fx, deck + 15, cz - 1, S("b:chimney"))
+    # masts with yards
+    for mx, h in ((8, 14), (L - 12, 16)):
+        v.fill(mx, deck + 1, cz, mx, deck + h, cz, S("spruce_fence"))
+        v.fill(mx, deck + h - 3, cz - 3, mx, deck + h - 3, cz + 3, S("spruce_fence"))
+        v.set(mx, deck + h + 1, cz, S("lantern"))
+    # lifeboats on the deckhouse roof sides, cargo hatch fore and aft
+    for bx in (hx0 + 2, hx0 + 7):
+        v.fill(bx, deck + 5, cz - 3, bx + 3, deck + 5, cz - 3, S("oak_slab", type="bottom"))
+        v.fill(bx, deck + 5, cz + 3, bx + 3, deck + 5, cz + 3, S("oak_slab", type="bottom"))
+    for hx in (5, L - 16):
+        v.fill(hx, deck + 1, cz - 2, hx + 3, deck + 1, cz + 2, S("spruce_trapdoor", half="bottom", facing="north", open="false"))
+    v.set(4, deck + 1, cz, S("b:crate")); v.set(L - 14, deck + 1, cz - 3, S("barrel", facing="up"))
+    # name on the stern
+    v.sign(0, deck - 1, cz, S("spruce_wall_sign", facing="west"), ["", rng.choice(["SS TUSSOCK QUEEN", "SS KHOY STAR", "SS PRITZ", "SS LOEN PRIDE"]), "TINGEN", ""])
+    return v
+
+
+def barge(rng, L=26, B=7):
+    v = Vol(L, 12, B)
+    cz = B // 2
+    for x in range(L):
+        hw = 3 if 1 < x < L - 2 else 2
+        for y in range(0, 5):
+            for z in range(cz - hw, cz + hw + 1):
+                edge = abs(z - cz) == hw or y == 0 or x in (0, L - 1)
+                v.set(x, y, z, S("spruce_planks") if edge else AIR)
+        for z in (cz - hw, cz + hw):
+            v.set(x, 5, z, S("b:dark_timber", axis="x"))
+    for x in range(3, L - 3, 3):
+        for z in range(cz - 2, cz + 3):
+            v.set(x, 4, z, S(rng.choice(("coal_block", "b:crate", "barrel", "hay_block"))))
+    v.fill(L - 5, 5, cz - 1, L - 2, 7, cz + 1, S("b:weathered_planks"))
+    v.fill(L - 5, 8, cz - 1, L - 2, 8, cz + 1, S("spruce_slab", type="bottom"))
+    v.fill(L - 4, 9, cz, L - 4, 11, cz, S("cobblestone_wall"))
+    v.set(L - 4, 12 - 1, cz, S("b:chimney"))
+    return v
+
+
+@landmark
+def ships(g, cv, rng, marks):
+    from terrain import WATER_TOP
+    s = cv.street
+    water_top = s - WATER_TOP
+    placed = 0
+    for vol, near_x, near_z in ((steamer(rng), 330, 470), (steamer(rng, 40, 11, "black_terracotta"), 470, 482),
+                                (barge(rng), 600, 486), (barge(rng), 200, 450)):
+        best = None
+        for dx in range(-40, 41, 2):
+            for dz in range(-12, 13):
+                x0, z0 = near_x + dx, near_z + dz - vol.d // 2
+                if x0 < 2 or z0 < 2 or x0 + vol.w >= cv.w - 2 or z0 + vol.d >= cv.d - 2:
+                    continue
+                # the whole hull (plus a margin) must sit in open water
+                if g.water[z0 - 1:z0 + vol.d + 1, x0 - 1:x0 + vol.w + 1].all():
+                    best = (x0, z0)
+                    break
+            if best:
+                break
+        if not best:
+            print("no water for a ship near", near_x, near_z)
+            continue
+        x0, z0 = best
+        keel = water_top - 4 if vol.h > 20 else water_top - 2
+        cv.stamp(vol, x0, z0, y=keel, facing="north")
+        placed += 1
+        if placed == 1:
+            marks["river"] = (x0 + vol.w // 2, s, z0 - 14, 0)
