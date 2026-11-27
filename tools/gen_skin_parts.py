@@ -108,18 +108,10 @@ def base(slim):
 
     def face(x, y, w, h):
         s = 3
-        if x in (0, 7):
-            s = 2                      # framing the face
-        if y == 7 and x in (0, 1, 6, 7):
-            s = 1
-        if y == 2 and 2 <= x <= 5:
-            s = 4                      # forehead catches the light
-        if y == 6 and x == 4:
-            s = 2                      # the nose's shadow
-        if y == 6 and x == 3:
-            s = 4                      # ... and its lit side
-        if y == 7 and 2 <= x <= 5:
-            s = 3
+        if y <= 4 and 2 <= x <= 5:
+            s = 4                      # forehead and cheeks catch the light (mostly under the fringe)
+        if y == 7 and x in (0, 7):
+            s = 2                      # jaw corners
         return (SKIN, s)
     paint(P, HEAD, "front", face)
 
@@ -243,16 +235,13 @@ def face_part():
         "........",
         "........",
         "........",
-        ".WI..IW.",
-        ".wi..iw.",
         "........",
+        ".LI..IL.",
+        ".wi..iw.",
         "...mm...",
     ]
-    # two-row eyes: the iris darker at the top (under the lid), the white a touch shaded at the top too
-    grid(P, HEAD, "front", rows, {"W": (WHITE, 3), "w": (WHITE, 4), "I": (IRIS, 1), "i": (IRIS, 3), "m": (LIP, 2)})
-    fx, fy, _, _ = HEAD.rect("front")
-    P.set(fx + 0, fy + 4, LASH, 2)   # a flick of lash at the outer corners
-    P.set(fx + 7, fy + 4, LASH, 2)
+    # eyes sit low: a dark lid line over the white, the iris (darker under the lid) towards the nose
+    grid(P, HEAD, "front", rows, {"L": (LASH, 1), "I": (IRIS, 1), "w": (WHITE, 4), "i": (IRIS, 3), "m": (LIP, 3)})
     # the iris is a little lighter at the bottom: use a brighter shade on the outer layer? keep it simple
     P.save("face")
 
@@ -260,11 +249,11 @@ def face_part():
 def brows(style):
     P = Part()
     rows = {
-        0: ["", "", "", ".BB..BB."],                          # straight
-        1: ["", "", ".B....B.", "..B..B.."],                  # arched (rises towards the outer edge)
-        2: ["", "", "", "BBB..BBB"],                          # heavy
+        0: ["", "", "", "", ".BB..BB."],                      # straight
+        1: ["", "", "", ".B....B.", "..B..B.."],              # arched (rises towards the outer edge)
+        2: ["", "", "", "", "BBB..BBB"],                      # heavy
     }[style]
-    grid(P, HEAD, "front", rows, {"B": (HAIR, 1)})
+    grid(P, HEAD, "front", rows, {"B": (HAIR, 1 if style == 2 else 2)})
     P.save(f"brows_{style}")
 
 
@@ -289,21 +278,21 @@ def hair_part(style):
     H = lambda s: (HAIR, s)
     # front templates: H hair; S hair's shadow on the forehead (skin, darker)
     fronts = {
-        0: ["HHHHHHHH", "HHHHHHHH", "S......S"],
-        1: ["HHHHHHHH", "HHHHHHHH", "HHHH...S", "HH......"],
-        2: ["HHHHHHHH", "SHHHHHHS", "........"],
-        3: ["HHHHHHHH", "HHHHHHHH", "H.HH.HH.", "H......H"],
-        4: ["HHHHHHHH", "HHHHHHHH", "HH.HH.HH"],
-        5: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H......H", "H......H", "H......H", "H......H"],
-        6: ["HHHHHHHH", "HS....SH", "H......H"],
-        7: ["HHHHHHHH", "HHH..HHH", "HH....HH", "H......H", "H......H", "H......H", "H......H", "H......H"],
-        8: ["HHHHHHHH", "S......S"],
+        0: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HH.HHH.H", "H......H", "S......S"],
+        1: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHHH.H", "HHH....H", "H......S"],
+        2: ["HHHHHHHH", "HHHHHHHH", "H.HHHH.H", "S......S"],
+        3: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H.HHH.HH", "H..H...H", "H......H"],
+        4: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HH.HH.HH", "H......H", "H......H"],
+        5: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "H......H", "H......H", "H......H", "H......H"],
+        6: ["HHHHHHHH", "HHHHHHHH", "HH.HH.HH", "H......H", "H......H", "S......S"],
+        7: ["HHHHHHHH", "HHHHHHHH", "HHHHHHHH", "HHH..HHH", "HH....HH", "H......H", "H......H", "H......H"],
+        8: ["HHHHHHHH", "HHHHHHHH", "S......S"],
     }
     # lengths of hair down the sides (back of head -> face) and down the back (across)
-    sides = {0: [4, 4, 4, 4, 3, 3, 2, 2], 1: [4, 4, 4, 4, 4, 3, 3, 3], 2: [5, 5, 5, 4, 4, 3, 2, 2],
-             3: [5, 5, 5, 5, 4, 4, 3, 3], 4: [5, 5, 5, 5, 5, 4, 4, 3], 5: [7, 7, 7, 7, 7, 7, 7, 7],
-             6: [6, 6, 5, 5, 4, 3, 3, 2], 7: [8, 8, 8, 8, 8, 8, 8, 8], 8: [3, 3, 3, 3, 2, 2, 2, 1]}[style]
-    back = {0: 5, 1: 5, 2: 6, 3: 6, 4: 6, 5: 7, 6: 8, 7: 8, 8: 3}[style]
+    sides = {0: [6, 6, 6, 5, 4, 4, 5, 5], 1: [6, 6, 6, 5, 5, 4, 5, 6], 2: [6, 6, 6, 5, 4, 3, 3, 4],
+             3: [6, 6, 6, 6, 5, 5, 5, 6], 4: [6, 6, 6, 6, 6, 5, 5, 6], 5: [8, 8, 8, 8, 8, 8, 8, 8],
+             6: [8, 8, 7, 6, 5, 4, 5, 6], 7: [8, 8, 8, 8, 8, 8, 8, 8], 8: [3, 3, 3, 3, 3, 2, 2, 2]}[style]
+    back = {0: 6, 1: 6, 2: 7, 3: 7, 4: 7, 5: 8, 6: 8, 7: 8, 8: 4}[style]
     cropped = style == 8
 
     fx, fy, _, _ = HEAD.rect("front")
@@ -361,6 +350,14 @@ def hair_part(style):
 
     # ---- outer layer: volume
     hx, hy, _, _ = HAT.rect("front")
+    if not cropped and style not in (3, 4, 5, 7):
+        for x in range(8):
+            if x % 3 != 2:
+                P.set(hx + x, hy, HAIR, 4 if x % 3 == 0 else 3)
+        for x in (0, 7):
+            P.set(hx + x, hy + 1, HAIR, 3)
+            P.set(hx + x, hy + 2, HAIR, 2)
+        paint(P, HAT, "top", lambda x, y, w, h: H(4 if (x + y) % 4 == 0 else 3) if (x in (0, 7) or y in (0, 7)) else None)
     if style in (3, 4):  # tousled and curly: tufts that stand out
         tuft = ["H.HHH.HH", "..H...H."] if style == 3 else ["HH.HHH.H", "H..H..HH", "..H..H.."]
         for y, row in enumerate(tuft):
@@ -401,16 +398,15 @@ def facial_part(style):
     P = Part()
     fx, fy, _, _ = HEAD.rect("front")
     if style == 1:
-        for y in (6, 7):
-            for x in range(8):
-                if (x + y) % 2 == 0 and not (y == 7 and x in (3, 4)):
-                    P.set(fx + x, fy + y, STUBBLE, 3)
+        for x in range(8):
+            if x % 2 == 0 and x not in (3, 4):
+                P.set(fx + x, fy + 7, STUBBLE, 3)
         for side in ("right", "left"):
             paint(P, HEAD, side, lambda x, y, w, h, side=side:
                   (STUBBLE, 2) if y >= 6 and ((w - 1 - x) if side == "right" else x) <= 2 and (x + y) % 2 == 0 else None)
     if style == 2:
-        grid(P, HEAD, "front", ["", "", "", "", "", "", "..HHHH..", ".H....H."], {"H": (HAIR, 3)})
-        P.set(fx + 3, fy + 6, HAIR, 4)
+        grid(P, HEAD, "front", ["", "", "", "", "", "", "", ".HHHHHH."], {"H": (HAIR, 3)})
+        P.set(fx + 3, fy + 7, HAIR, 4)
     if style == 3:
         for y in range(3, 8):
             P.set(fx, fy + y, HAIR, 3 if y < 6 else 2)
@@ -423,11 +419,9 @@ def facial_part(style):
             paint(P, HEAD, side, lambda x, y, w, h, side=side:
                   (HAIR, 3 if y < 6 else 2) if y >= 3 and ((w - 1 - x) if side == "right" else x) <= 1 else None)
     if style == 4:
-        rows = ["", "", "", "", "", "HH....HH", "HHHHHHHH", "HHH..HHH"]
+        rows = ["", "", "", "", "", "H......H", "H......H", "HHHHHHHH"]
         grid(P, HEAD, "front", rows, {"H": (HAIR, 3)})
-        P.set(fx + 3, fy + 6, HAIR, 4)
-        P.set(fx + 2, fy + 7, HAIR, 2)
-        P.set(fx + 5, fy + 7, HAIR, 2)
+        P.set(fx + 3, fy + 7, HAIR, 4)
         for side in ("right", "left"):
             paint(P, HEAD, side, lambda x, y, w, h, side=side:
                   (HAIR, 3 if y < 7 else 2) if y >= 4 and ((w - 1 - x) if side == "right" else x) <= 2 else None)
