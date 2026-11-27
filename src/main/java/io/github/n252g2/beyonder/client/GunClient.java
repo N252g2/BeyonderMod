@@ -158,8 +158,10 @@ public final class GunClient {
         String cylinder = RevolverItem.cylinder(stack);
         int w = g.guiWidth();
         int h = g.guiHeight();
-        int x = w - 92;
-        int y = h - 30;
+        // above the potion belt with the Beyonder HUD; the bottom-right corner otherwise
+        boolean beyonderHud = BeyonderHotbar.active(mc);
+        int x = beyonderHud ? w / 2 + 99 : w - 92;
+        int y = beyonderHud ? h - 56 : h - 30;
         g.fill(x - 4, y - 4, x + 88, y + 22, 0xA0100E14);
         g.fill(x - 4, y - 4, x + 88, y - 3, 0xFF8A7140);
         int capacity = RevolverItem.stats(stack).capacity();

@@ -80,5 +80,7 @@
   "key.beyonder.swap_weapons": "Swap Main Weapon and Sidearm",
   "key.beyonder.belt_1": "Potion Belt 1",
   "key.beyonder.belt_2": "Potion Belt 2",
-  "key.beyonder.belt_3": "Potion Belt 3"
+  "key.beyonder.belt_3": "Potion Belt 3",
+  "beyonder.configuration.beyonderHud": "Beyonder HUD",
+  "beyonder.configuration.beyonderHud.tooltip": "Beyonder's hotbar, weapon and belt panels and its health, armour, hunger and air bars. Turn off to get vanilla's back."
 }

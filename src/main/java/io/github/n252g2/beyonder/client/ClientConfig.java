@@ -10,6 +10,10 @@ public final class ClientConfig {
         BUILDER.comment("The look of Tingen: color grading, fog and night tint.").push("atmosphere");
     }
 
+    public static final ModConfigSpec.BooleanValue BEYONDER_HUD = BUILDER
+            .comment("Beyonder's hotbar, weapon and belt panels, and health, armour, hunger and air bars in place of vanilla's")
+            .define("beyonderHud", true);
+
     public static final ModConfigSpec.BooleanValue COLOR_GRADING = BUILDER
             .comment("Apply the muted Victorian color grade to the world.")
             .define("colorGrading", true);

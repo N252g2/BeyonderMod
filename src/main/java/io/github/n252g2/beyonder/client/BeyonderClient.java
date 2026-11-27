@@ -51,6 +51,7 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(GunClient::onComputeFov);
         NeoForge.EVENT_BUS.addListener(GunClient::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(BeyonderHotbar::onRenderLayer);
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onScreenOpening);
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onRenderHand);
@@ -85,6 +86,7 @@ public class BeyonderClient {
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Beyonder.id("beyonder_hud"), BeyonderHud::render);
         event.registerAboveAll(Beyonder.id("gun_hud"), GunClient::renderHud);
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR, Beyonder.id("hotbar"), BeyonderHotbar::render);
     }
 
     private static void onClientSetup(net.neoforged.fml.event.lifecycle.FMLClientSetupEvent event) {

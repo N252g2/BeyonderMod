@@ -59,6 +59,12 @@ public final class SelfTest {
                 server.getCommands().performPrefixedCommand(src, "gamerule doDaylightCycle false");
                 sp.setYRot(0.0F);
                 sp.setXRot(0.0F);
+                server.getCommands().performPrefixedCommand(src, "item replace entity @a armor.chest with minecraft:iron_chestplate");
+                var eq = io.github.n252g2.beyonder.core.Equipment.get(sp).items();
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_1.ordinal(), new ItemStack(net.minecraft.world.item.Items.BREAD, 5));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_3.ordinal(), new ItemStack(net.minecraft.world.item.Items.HONEY_BOTTLE, 2));
+                sp.giveExperienceLevels(7);
+                sp.giveExperiencePoints(20);
             });
             case 80 -> {
                 mc.options.hideGui = true;
@@ -113,7 +119,18 @@ public final class SelfTest {
                 mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             }
             case 306 -> shot(mc, "17_cast_card");
-            case 320 -> mc.stop();
+            case 308 -> server.execute(() -> {
+                ServerPlayer sp = server.getPlayerList().getPlayer(mc.player.getUUID());
+                if (sp != null) {
+                    sp.hurt(sp.damageSources().generic(), 7.0F);
+                    sp.getFoodData().setFoodLevel(13);
+                }
+            });
+            case 310 -> mc.options.setCameraType(CameraType.FIRST_PERSON);
+            case 313 -> shot(mc, "18_hud_drawn_after_hit");
+            case 316 -> EquipmentClient.toggleDraw(mc.player, io.github.n252g2.beyonder.core.Equipment.get(mc.player));
+            case 340 -> shot(mc, "19_hud_sheathed");
+            case 350 -> mc.stop();
             default -> {}
         }
     }
