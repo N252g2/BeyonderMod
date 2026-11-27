@@ -279,9 +279,7 @@ def main():
     marks = {}
     SP.place_all(g, cv, rng, marks)          # landmarks reserve and build their own ground first
     g.street_lamps()
-    for prof, rect in DISTRICTS:
-        for comp in BL.components(g, rect):
-            BL.fill_block(g, cv, rng, comp, PROFILES[prof])
+    BL.fill_city(g, cv, rng, DISTRICTS, PROFILES)
     SP.street_signs(g, cv, rng)
     g.sewers()
     SP.leftovers(g, cv, rng)

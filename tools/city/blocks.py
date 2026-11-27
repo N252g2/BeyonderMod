@@ -273,7 +273,75 @@ def yards(ground, cv, rng, rect, placed, kind):
                 cv.a[s, z, x] = I(rng.choice(("rose_bush", "lilac", "peony", "fern", "short_grass")), half="lower") \
                     if False else I(rng.choice(("poppy", "fern", "short_grass", "oxeye_daisy", "azure_bluet")))
     if kind == "works":
-        for j in range(0, len(zs), 23):
-            z, x = zs[j], xs[j]
-            if cv.a[s, z, x] == 0:
-                cv.a[s, z, x] = I(rng.choice(("b:crate", "barrel", "b:crate", "hay_block", "coal_block")))
+        # tidy stacks of cargo here and there, not litter everywhere
+        for _ in range(len(zs) // 260):
+            j = rng.randrange(len(zs))
+            z0, x0 = zs[j], xs[j]
+            w, d, h = rng.randint(2, 4), rng.randint(2, 3), rng.randint(1, 2)
+            if not ground.yard[z0:z0 + d, x0:x0 + w].all() or (cv.a[s, z0:z0 + d, x0:x0 + w] != 0).any():
+                continue
+            item = rng.choice(("b:crate", "barrel", "b:crate", "hay_block", "coal_block"))
+            cv.a[s:s + h, z0:z0 + d, x0:x0 + w] = I(item)
+
+
+def fill_city(ground, cv, rng, districts, profiles):
+    """Line every street with buildings wherever there is room behind its pavement, avenues first; then turn
+    what is left in each district into back yards."""
+    D, W = ground.free.shape
+
+    def district(x, z):
+        for name, (x0, z0, x1, z1) in districts:
+            if x0 <= x <= x1 and z0 <= z <= z1:
+                return name
+        return None
+
+    order = sorted(range(len(ground.streets)), key=lambda i: {"wide": 0, "avenue": 1, "street": 2, "lane": 3}[ground.streets[i].kind])
+    placed = []
+    for sid in order:
+        st = ground.streets[sid]
+        for sgn in (-1, 1):
+            line = st.c + sgn * (st.hw + 1)
+            if st.axis == "x":
+                side = "south" if sgn < 0 else "north"
+                if not 0 <= line < D:
+                    continue
+            else:
+                side = "east" if sgn < 0 else "west"
+                if not 0 <= line < W:
+                    continue
+            lo, hi = max(st.a, 0), min(st.b, (W if st.axis == "x" else D) - 1)
+            # which district each frontage cell belongs to
+            prof_at = []
+            for t in range(lo, hi + 1):
+                x, z = (t, line) if st.axis == "x" else (line, t)
+                prof_at.append(district(x, z))
+            t = lo
+            while t <= hi:
+                name = prof_at[t - lo]
+                u = t
+                while u + 1 <= hi and prof_at[u + 1 - lo] == name:
+                    u += 1
+                if name is not None:
+                    prof = profiles[name]
+                    for depth in range(prof.depth, 7, -2):
+                        for a, b in free_runs(ground, side, t, u, line, depth, minlen=5 if depth < prof.depth else 5):
+                            def street_at(tt):
+                                x, z = (tt, line) if st.axis == "x" else (line, tt)
+                                return 0 <= x < W and 0 <= z < D and 1 <= ground.cell[z, x] <= 3
+                            lo_open, hi_open = street_at(a - 1), street_at(b + 1)
+                            # local left/right as seen from the street
+                            if side in ("north", "east"):
+                                left, right = lo_open, hi_open
+                            else:
+                                left, right = hi_open, lo_open
+                            segs = prof.row(rng, b - a + 1, st, depth, left, right)
+                            placed += place_row(ground, cv, rng, side, a, b, line, depth, segs)
+                t = u + 1
+    # back yards
+    for name, rect in districts:
+        prof = profiles[name]
+        for comp in components(ground, rect, min_area=1):
+            bx0, bz0, bx1, bz1 = comp
+            inside = [p for p in placed if bx0 - 30 <= p[0] <= bx1 + 30 and bz0 - 30 <= p[1] <= bz1 + 30]
+            yards(ground, cv, rng, comp, inside, prof.yard_kind)
+    return placed

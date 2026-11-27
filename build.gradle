@@ -71,7 +71,7 @@ neoForge {
             // CI city run: build Tingen as soon as the world is up, then stop
             if (System.getenv('BEYONDER_CITYTEST') != null) {
                 systemProperty 'beyonder.citytest', 'true'
-                systemProperty 'beyonder.city.budget', '400'
+                systemProperty 'beyonder.city.budget', '40'
             }
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }

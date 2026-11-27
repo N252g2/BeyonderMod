@@ -808,6 +808,8 @@ def station(g, cv, rng, marks):
     for x in range(sq[0] + 6, sq[2], 14):
         lamp(cv, x, sq[1] + 2); lamp(cv, x, sq[3] - 2)
     for x in range(sq[0] + 13, sq[2], 28):
+        if abs(x - 420) < 8:
+            continue
         cv.a[s - 1, 94, x] = I("grass_block")
         tree(cv, x, s, 94, rng, "plane")
     # a cab rank of hay and water troughs
