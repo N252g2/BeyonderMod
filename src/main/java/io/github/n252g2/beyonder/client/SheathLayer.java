@@ -131,13 +131,13 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
                 if (gun) {
                     // holstered: barrel down, grip up and to the back
                     // low on the thigh: the grip at the belt, the barrel along the leg
-                    pose.translate(side * 0.30F, 0.86F, 0.02F);
+                    pose.translate(side * 0.335F, 0.86F, 0.02F);
                     pose.mulPose(Axis.XP.rotationDegrees(90.0F));
                     pose.mulPose(Axis.XP.rotationDegrees(-8.0F));
                     pose.scale(0.5F, 0.5F, 0.5F);
                 } else {
                     // a blade hangs from the belt, tip down and back, flat against the leg
-                    pose.translate(side * 0.31F, 0.58F, 0.05F);
+                    pose.translate(side * 0.34F, 0.58F, 0.05F);
                     pose.mulPose(Axis.XP.rotationDegrees(26.0F));
                     pose.mulPose(Axis.YP.rotationDegrees(90.0F));
                     pose.scale(0.36F, 0.36F, 0.36F);

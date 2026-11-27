@@ -177,6 +177,7 @@ public final class SelfTest {
             case 390 -> mc.options.setCameraType(CameraType.FIRST_PERSON);
             case 398 -> {
                 mc.options.hideGui = false;
+                mc.player.getInventory().selected = 4; // an empty hand, so the arm (and its sleeve) shows
             }
             case 404 -> shot(mc, "24_first_person_sleeves");
             case 410 -> mc.stop();

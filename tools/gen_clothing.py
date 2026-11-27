@@ -141,8 +141,10 @@ def waistcoat(L, cloth, back, pattern=None):
         s = 3
         if pattern:
             s = pattern(x, y, s)
-        if x in (3, 4) and y in (5, 7, 9):
-            return (BRASS_R, 4 if x == 3 else 3)
+        if x == 3 and y in (5, 7, 9):
+            return (BRASS_R, 4)                             # one row of buttons down the front
+        if x == 4:
+            s -= 1                                          # where the fronts overlap
         if y == 11 and x in (0, 7):
             return None                                     # the pointed hem
         if x in (0, 7):
@@ -207,7 +209,7 @@ BRASS_R = ramp(BRASS_C)
 
 
 def tweed(x, y, s):
-    return s + (1 if (x + 2 * y) % 5 == 0 else -1 if (2 * x + y) % 7 == 0 else 0)
+    return s + (-1 if (x + 2 * y) % 6 == 0 else 0)          # a faint fleck, not a pattern
 
 
 def brocade(x, y, s):
