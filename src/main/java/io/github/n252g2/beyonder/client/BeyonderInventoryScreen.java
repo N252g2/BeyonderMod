@@ -61,6 +61,10 @@ public class BeyonderInventoryScreen extends AbstractContainerScreen<InventoryMe
     @Override
     protected void containerTick() {
         super.containerTick();
+        if (minecraft != null && minecraft.gameMode != null && minecraft.gameMode.hasInfiniteItems()) {
+            minecraft.setScreen(new net.minecraft.client.gui.screens.inventory.InventoryScreen(player)); // hands over to creative
+            return;
+        }
         if (clothesButton != null) {
             clothesButton.setMessage(clothesLabel());
         }

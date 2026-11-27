@@ -101,7 +101,9 @@ public final class EquipmentClient {
 
     static void onScreenOpening(ScreenEvent.Opening event) {
         Minecraft mc = Minecraft.getInstance();
-        if (event.getNewScreen() != null && event.getNewScreen().getClass() == InventoryScreen.class && mc.player != null) {
+        // creative keeps its own inventory (vanilla's screen hands over to it on opening)
+        if (event.getNewScreen() != null && event.getNewScreen().getClass() == InventoryScreen.class && mc.player != null
+                && mc.gameMode != null && !mc.gameMode.hasInfiniteItems()) {
             event.setNewScreen(new BeyonderInventoryScreen(mc.player));
         }
     }

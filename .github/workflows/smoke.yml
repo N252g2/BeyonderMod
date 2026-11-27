@@ -29,3 +29,8 @@ jobs:
           sleep 5
           grep -nE "Done \(|Mixin|mixin|ERROR|Exception|Caused by" server.log | head -80
           grep -q "Done (" server.log
+      - name: Game tests (equipment rules on a mock player)
+        run: |
+          timeout 900 ./gradlew runGameTestServer --console=plain > gametest.log 2>&1; code=$?
+          grep -nE "GameTest|gametest|passed|failed|Mixin|ERROR|Exception|Caused by|assert" gametest.log | grep -v "DEBUG" | head -80
+          exit $code
