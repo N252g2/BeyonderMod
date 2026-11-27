@@ -27,13 +27,22 @@ public final class SelfTest {
 
     private SelfTest() {}
 
+    private static int idle;
+
     static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         IntegratedServer server = mc.getSingleplayerServer();
         if (mc.player == null || mc.level == null || server == null) {
+            if (++idle % 200 == 0) {
+                org.slf4j.LoggerFactory.getLogger("beyonder-selftest").info("waiting for the world (screen: {})",
+                        mc.screen == null ? "none" : mc.screen.getClass().getSimpleName());
+            }
             return;
         }
         t++;
+        if (t % 20 == 0) {
+            org.slf4j.LoggerFactory.getLogger("beyonder-selftest").info("self-test tick {}", t);
+        }
         switch (t) {
             case 40 -> server.execute(() -> {
                 ServerPlayer sp = server.getPlayerList().getPlayer(mc.player.getUUID());
@@ -105,6 +114,7 @@ public final class SelfTest {
     }
 
     private static void shot(Minecraft mc, String name) {
+        org.slf4j.LoggerFactory.getLogger("beyonder-selftest").info("screenshot {}", name);
         Screenshot.grab(mc.gameDirectory, name + ".png", mc.getMainRenderTarget(), msg -> {});
     }
 }

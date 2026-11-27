@@ -82,8 +82,9 @@ jobs:
         run: |
           sudo apt-get install -y -qq xvfb libgl1-mesa-dri >/dev/null
           export LIBGL_ALWAYS_SOFTWARE=1 BEYONDER_SELFTEST=1
-          timeout 1200 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient --console=plain > client.log 2>&1 || true
-          grep -nE "Exception|ERROR|Caused by|Screenshot|Saved screenshot" client.log | grep -v "Narrator\|flite\|OpenAL\|SoundEngine" | head -40
+          printf 'renderDistance:3\nsimulationDistance:5\ngraphicsMode:0\nmaxFps:30\nonboardAccessibility:false\ntutorialStep:none\nnarrator:0\n' > run/options.txt
+          timeout 1100 xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient --console=plain > client.log 2>&1 || true
+          grep -nE "selftest|beyonder-selftest|Exception|ERROR|Caused by|Screenshot|Saved screenshot|quick|Quick" client.log | grep -v "Narrator\|flite\|OpenAL\|SoundEngine" | head -40
           ls -la run/screenshots || true
       - name: Publish the screenshots to the 'screens' branch
         run: |
@@ -91,4 +92,5 @@ jobs:
           cp client.log /tmp/shots/client.log
           git config user.name "github-actions" && git config user.email "actions@github.com"
           git checkout --orphan screens-tmp && git rm -rq --cached . && rm -rf -- * .github 2>/dev/null || true
-          cp /tmp/shots/* . && git add -f *.png client.log 2>/dev/null; git commit -qm "Screenshots from the self-test" && git push -f origin screens-tmp:screens
+          cp /tmp/shots/* . ; git add -f ./*.png client.log 2>/dev/null || true
+          git commit -qm "Screenshots from the self-test" && git push -f origin screens-tmp:screens
