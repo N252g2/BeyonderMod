@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "beyonder:revolver_round",
+    "beyonder:silver_round",
+    "#minecraft:arrows"
+  ]
+}

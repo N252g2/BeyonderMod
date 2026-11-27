@@ -131,7 +131,8 @@ public class CoinItem extends Item {
                 ? "Heads: danger is near. Your spirit prickles."
                 : "Tails: no danger nearby. The coin is cool in your palm.")
                 .withStyle(answer ? ChatFormatting.RED : ChatFormatting.AQUA), true);
-        Beyonders.act(player, 9, 3.0F);
+        Beyonders.act(player, 9, 3.0F, "coin");
+        io.github.n252g2.beyonder.core.EquipmentRules.anim(player, io.github.n252g2.beyonder.core.PlayerAnim.CAST, io.github.n252g2.beyonder.core.PlayerAnim.CAST_DIVINE, true);
     }
 
     @Override

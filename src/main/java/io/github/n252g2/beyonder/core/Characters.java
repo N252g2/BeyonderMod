@@ -183,23 +183,34 @@ public final class Characters {
                 CompoundTag tag = new CompoundTag();
                 tag.putString("Cylinder", "LLLLLL");
                 gun.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-                give(player, gun);
-                give(player, new ItemStack(BeyonderContent.REVOLVER_ROUND.get(), 6));
+                equip(player, Equipment.Slot.WEAPON, gun);
+                equip(player, Equipment.Slot.AMMO_1, new ItemStack(BeyonderContent.REVOLVER_ROUND.get(), 6));
                 give(player, new ItemStack(BeyonderContent.SILVER_SOLI.get(), 2));
             }
             case APOTHECARY -> {
                 for (int i = 0; i < 2; i++) {
                     give(player, PotionContents.createItemStack(Items.POTION, Potions.WATER));
                 }
+                equip(player, Equipment.Slot.BELT_1, PotionContents.createItemStack(Items.POTION, Potions.HEALING));
                 give(player, new ItemStack(BeyonderContent.STARLIT_LAVENDER.get()));
                 give(player, new ItemStack(BeyonderContent.DREAM_MOSS.get(), 2));
                 give(player, new ItemStack(BeyonderContent.SILVER_SOLI.get()));
             }
             case STREET_URCHIN -> give(player, new ItemStack(BeyonderContent.COPPER_PENNY.get(), 30));
             case HEIR -> {
-                give(player, new ItemStack(BeyonderContent.SWORD_CANE.get()));
+                equip(player, Equipment.Slot.WEAPON, new ItemStack(BeyonderContent.SWORD_CANE.get()));
                 give(player, new ItemStack(BeyonderContent.GOLD_POUND.get()));
             }
+        }
+    }
+
+    /** Starting weapons and ammo go straight into their equipment slots (or the bag if taken). */
+    private static void equip(ServerPlayer player, Equipment.Slot slot, ItemStack stack) {
+        EquipmentData d = Equipment.get(player);
+        if (d.items().get(slot.ordinal()).isEmpty()) {
+            d.items().set(slot.ordinal(), stack);
+        } else {
+            give(player, stack);
         }
     }
 

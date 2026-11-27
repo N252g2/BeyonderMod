@@ -86,6 +86,11 @@ public final class Abilities {
         };
         if (used) {
             mine.put(ability, now + ability.cooldownTicks());
+            EquipmentRules.anim(player, PlayerAnim.CAST, switch (ability) {
+                case CARD_THROW -> PlayerAnim.CAST_CARD;
+                case AIR_BULLET -> PlayerAnim.CAST_AIR_BULLET;
+                case FLAME_JUMP -> PlayerAnim.CAST_FLAME;
+            }, true);
         }
     }
 
@@ -103,7 +108,7 @@ public final class Abilities {
             target.hurt(player.damageSources().playerAttack(player), damage);
             level.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY(0.6), target.getZ(), 8, 0.2, 0.2, 0.2, 0.2);
             if (!target.isAlive() && target instanceof Enemy) {
-                Beyonders.act(player, 8, 4.0F); // a Clown's performance
+                Beyonders.act(player, 8, 4.0F, "card"); // a Clown's performance
             }
         } else {
             level.sendParticles(ParticleTypes.CRIT, end.x, end.y, end.z, 4, 0.1, 0.1, 0.1, 0.1);
@@ -126,7 +131,7 @@ public final class Abilities {
             target.knockback(0.9, -look.x, -look.z);
             level.sendParticles(ParticleTypes.EXPLOSION, target.getX(), target.getY(0.5), target.getZ(), 1, 0, 0, 0, 0);
             if (!target.isAlive()) {
-                Beyonders.act(player, 7, 3.0F); // a Magician's trick
+                Beyonders.act(player, 7, 3.0F, "air_bullet"); // a Magician's trick
             }
         }
         return true;
@@ -161,7 +166,7 @@ public final class Abilities {
         player.resetFallDistance();
         burst(level, player.position(), ParticleTypes.FLAME);
         level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.8F, 1.6F);
-        Beyonders.act(player, 7, 1.5F);
+        Beyonders.act(player, 7, 1.5F, "flame_jump");
         return true;
     }
 
@@ -239,7 +244,8 @@ public final class Abilities {
         Vec3 away = attacker != null ? player.position().subtract(attacker.position()).normalize() : player.getLookAngle().reverse();
         player.randomTeleport(player.getX() + away.x * 4.0, player.getY(), player.getZ() + away.z * 4.0, true);
         player.displayClientMessage(Component.literal("A paper figurine crumples in your place.").withStyle(ChatFormatting.GOLD), true);
-        Beyonders.act(player, 7, 3.0F);
+        EquipmentRules.anim(player, PlayerAnim.CAST, PlayerAnim.CAST_PAPER, true);
+        Beyonders.act(player, 7, 3.0F, "paper");
     }
 
     private static boolean consumePaper(ServerPlayer player) {

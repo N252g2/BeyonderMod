@@ -3,8 +3,17 @@
   "minVersion": "0.8",
   "package": "io.github.n252g2.beyonder.mixin",
   "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "InventoryMenuMixin",
+    "InventoryMixin",
+    "PlayerMixin"
+  ],
   "client": [
-    "AbstractClientPlayerMixin"
+    "AbstractClientPlayerMixin",
+    "CreativeModeInventoryScreenMixin",
+    "HumanoidArmorLayerMixin",
+    "HumanoidModelMixin",
+    "ItemInHandLayerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

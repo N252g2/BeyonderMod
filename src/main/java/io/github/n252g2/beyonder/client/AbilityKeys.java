@@ -112,8 +112,7 @@ public final class AbilityKeys {
                 continue;
             }
             readyAt = mc.level.getGameTime() + ability.cooldownTicks();
-            PacketDistributor.sendToServer(new UseAbilityPayload(ability.id()));
-            player.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+            PacketDistributor.sendToServer(new UseAbilityPayload(ability.id())); // the server sends back the casting pose
         }
     }
 }

@@ -75,5 +75,10 @@
   "item.beyonder.longsword": "Longsword",
   "item.beyonder.sword_cane": "Sword Cane",
   "item.beyonder.crimson_greatsword": "Crimson Greatsword",
-  "item.beyonder.crescent_staff": "Crescent Staff"
+  "item.beyonder.crescent_staff": "Crescent Staff",
+  "key.beyonder.draw": "Draw / Sheathe Weapons",
+  "key.beyonder.swap_weapons": "Swap Main Weapon and Sidearm",
+  "key.beyonder.belt_1": "Potion Belt 1",
+  "key.beyonder.belt_2": "Potion Belt 2",
+  "key.beyonder.belt_3": "Potion Belt 3"
 }

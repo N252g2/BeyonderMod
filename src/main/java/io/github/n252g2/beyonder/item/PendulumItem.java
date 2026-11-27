@@ -67,7 +67,8 @@ public class PendulumItem extends Item {
         sp.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
         String question = customName.getString().trim();
         divine(sp, data, question);
-        Beyonders.act(sp, 9, 6.0F); // divining is a Seer's act
+        Beyonders.act(sp, 9, 6.0F, "pendulum"); // divining is a Seer's act
+        io.github.n252g2.beyonder.core.EquipmentRules.anim(sp, io.github.n252g2.beyonder.core.PlayerAnim.CAST, io.github.n252g2.beyonder.core.PlayerAnim.CAST_DIVINE, true);
         return InteractionResultHolder.consume(stack);
     }
 

@@ -174,6 +174,7 @@ public class Beyonder {
         BeyonderServerEvents.register();
         BeyonderLoot.register();
         Abilities.registerEvents();
+        io.github.n252g2.beyonder.core.EquipmentRules.registerEvents();
         LOGGER.info("Beyonder loaded. The fog settles over Tingen.");
     }
 

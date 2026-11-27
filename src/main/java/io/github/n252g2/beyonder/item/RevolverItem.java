@@ -121,6 +121,7 @@ public class RevolverItem extends Item {
         setCylinder(stack, cylinder.substring(1));
         Stats st = item.stats;
         player.getCooldowns().addCooldown(item, st.fireTicks());
+        io.github.n252g2.beyonder.core.EquipmentRules.anim(player, io.github.n252g2.beyonder.core.PlayerAnim.RECOIL, 0, false);
 
         // Hip fire scatters; aimed shots go nearly where the sights are.
         float spread = isAiming(player) ? st.adsSpread() : st.hipSpread();
@@ -198,6 +199,9 @@ public class RevolverItem extends Item {
         Inventory inv = player.getInventory();
         StringBuilder loaded = new StringBuilder(cylinder);
         loadFrom(player.getOffhandItem(), loaded, capacity);
+        // the ammo pouch next, then the bag
+        loadFrom(io.github.n252g2.beyonder.core.Equipment.item(player, io.github.n252g2.beyonder.core.Equipment.Slot.AMMO_1), loaded, capacity);
+        loadFrom(io.github.n252g2.beyonder.core.Equipment.item(player, io.github.n252g2.beyonder.core.Equipment.Slot.AMMO_2), loaded, capacity);
         for (int pass = 0; pass < 2 && loaded.length() < capacity; pass++) {
             Item want = pass == 0 ? BeyonderContent.REVOLVER_ROUND.get() : BeyonderContent.SILVER_ROUND.get();
             for (int i = 0; i < inv.getContainerSize() && loaded.length() < capacity; i++) {
@@ -216,6 +220,8 @@ public class RevolverItem extends Item {
         player.getCooldowns().addCooldown(item, item.stats.reloadTicks());
         player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.CHAIN_PLACE,
                 SoundSource.PLAYERS, 0.8F, 1.5F);
+        io.github.n252g2.beyonder.core.EquipmentRules.anim(player, io.github.n252g2.beyonder.core.PlayerAnim.RELOAD,
+                item.stats.reloadTicks(), false);
         // The cylinder swings back in near the end of the reload.
         io.github.n252g2.beyonder.core.Beyonders.later(player, item.stats.reloadTicks() - 8, () ->
                 player.level().playSound(null, player.getX(), player.getEyeY(), player.getZ(), SoundEvents.IRON_DOOR_CLOSE,
@@ -249,9 +255,16 @@ public class RevolverItem extends Item {
         stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
     }
 
-    /** Rounds this player could load: ordinary and silver, anywhere in the inventory. */
+    /** Rounds this player could load: ordinary and silver, in the ammo pouch or anywhere in the inventory. */
     public static int reserve(Player player) {
         int n = 0;
+        for (var slot : new io.github.n252g2.beyonder.core.Equipment.Slot[] {
+                io.github.n252g2.beyonder.core.Equipment.Slot.AMMO_1, io.github.n252g2.beyonder.core.Equipment.Slot.AMMO_2}) {
+            ItemStack s = io.github.n252g2.beyonder.core.Equipment.item(player, slot);
+            if (s.is(BeyonderContent.REVOLVER_ROUND.get()) || s.is(BeyonderContent.SILVER_ROUND.get())) {
+                n += s.getCount();
+            }
+        }
         Inventory inv = player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);

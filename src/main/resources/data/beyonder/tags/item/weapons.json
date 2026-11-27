@@ -1,0 +1,16 @@
+{
+  "replace": false,
+  "values": [
+    "beyonder:revolver",
+    "beyonder:death_knell",
+    "beyonder:longsword",
+    "beyonder:sword_cane",
+    "beyonder:crimson_greatsword",
+    "beyonder:crescent_staff",
+    "#minecraft:swords",
+    "minecraft:bow",
+    "minecraft:crossbow",
+    "minecraft:trident",
+    "minecraft:mace"
+  ]
+}

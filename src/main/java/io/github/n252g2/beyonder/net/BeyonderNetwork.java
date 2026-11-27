@@ -51,11 +51,33 @@ public final class BeyonderNetwork {
                         Abilities.use(player, ability);
                     }
                 }));
+        registrar.playToClient(EquipStatePayload.TYPE, EquipStatePayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    ClientInbox.accept(payload);
+                    // our own drawn state drives which slot is the main hand on this client
+                    net.minecraft.world.entity.player.Player self = context.player();
+                    if (self != null && self.getId() == payload.entityId()) {
+                        var d = io.github.n252g2.beyonder.core.Equipment.get(self);
+                        if (d.drawn() != payload.drawn()) {
+                            d.setDrawn(payload.drawn(), self.getInventory().selected);
+                        }
+                        d.setClothesOverArmour(payload.clothesOverArmour());
+                    }
+                }));
+        registrar.playToClient(PlayerAnimPayload.TYPE, PlayerAnimPayload.STREAM_CODEC,
+                (payload, context) -> ClientInbox.accept(payload));
+        registrar.playToServer(EquipActionPayload.TYPE, EquipActionPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        io.github.n252g2.beyonder.core.EquipmentRules.action(player, payload.action());
+                    }
+                }));
         registrar.playToServer(GunActionPayload.TYPE, GunActionPayload.STREAM_CODEC,
                 (payload, context) -> context.enqueueWork(() -> {
                     if (context.player() instanceof ServerPlayer player) {
                         ItemStack gun = player.getMainHandItem();
-                        if (gun.getItem() instanceof RevolverItem) {
+                        // guns only work drawn from the weapon slot
+                        if (gun.getItem() instanceof RevolverItem && io.github.n252g2.beyonder.core.Equipment.isDrawn(player)) {
                             if (payload.action() == GunActionPayload.FIRE) {
                                 RevolverItem.fire(player, gun);
                             } else if (payload.action() == GunActionPayload.RELOAD) {

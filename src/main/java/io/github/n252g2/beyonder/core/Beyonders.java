@@ -107,20 +107,42 @@ public final class Beyonders {
 
     public static void forget(Player player) {
         SPIRIT_VISION.remove(player.getUUID());
+        STALENESS.remove(player.getUUID());
     }
 
     // ---------------------------------------------------------------- digestion (acting)
 
+    /** How fast each Sequence digests: a quarter speed at 9, slowing by a fifth for every Sequence after. */
+    static float pace(int sequence) {
+        return 0.25F * (float) Math.pow(0.8, Math.max(0, 9 - sequence));
+    }
+
+    /** Per player and kind of act: how stale it is, and when that was last updated. */
+    private static final Map<UUID, Map<String, float[]>> STALENESS = new ConcurrentHashMap<>();
+    private static final float STALE_DECAY_TICKS = 2400.0F; // one use forgotten every 2 minutes
+
     /**
      * Acting digests the potion, but only when you play the role of your current Sequence:
      * a Seer divines and observes, a Clown performs in battle, a Magician deceives with tricks.
+     * Digestion is slow on purpose, and the same act repeated soon after counts for less (a role is
+     * lived, not ground out); {@code kind} names the act, or null for steady acts like Spirit Vision.
      */
-    public static void act(ServerPlayer player, int forSequence, float amount) {
+    public static void act(ServerPlayer player, int forSequence, float amount, String kind) {
         BeyonderData d = get(player);
         if (d.pathway() != Pathway.SEER || d.sequence() != forSequence || d.digestion() >= 100.0F) {
             return;
         }
-        d.setDigestion(d.digestion() + amount);
+        float gain = amount * pace(forSequence);
+        if (kind != null) {
+            long now = player.level().getGameTime();
+            float[] st = STALENESS.computeIfAbsent(player.getUUID(), k -> new ConcurrentHashMap<>())
+                    .computeIfAbsent(kind, k -> new float[] {0.0F, now});
+            st[0] = Math.max(0.0F, st[0] - (now - st[1]) / STALE_DECAY_TICKS);
+            st[1] = now;
+            gain /= 1.0F + 0.6F * st[0];
+            st[0] += 1.0F;
+        }
+        d.setDigestion(d.digestion() + gain);
         if (d.digestion() >= 100.0F) {
             player.displayClientMessage(Component.literal("The potion is fully digested. You are ready to advance.")
                     .withStyle(ChatFormatting.GOLD), false);
@@ -135,7 +157,7 @@ public final class Beyonders {
             return "";
         }
         return switch (sequence) {
-            case 9 -> "Act as a Seer: divine with the Spirit Pendulum and observe with your Spirit Vision (V).";
+            case 9 -> "Act as a Seer: divine with the Spirit Pendulum and observe with your Spirit Vision (V). Digestion is slow, and the same act repeated soon after counts for less.";
             case 8 -> "Act as a Clown: perform in battle. Defeat hostile creatures with Card Throw (G to select, R to use).";
             case 7 -> "Act as a Magician: deceive and amaze. Flame Jump, Air Bullet and Paper Substitute all count.";
             default -> "";
@@ -329,11 +351,11 @@ public final class Beyonders {
                         .withStyle(ChatFormatting.DARK_PURPLE), true);
                 addLossOfControl(player, 8.0F);
             } else if (d.pathway() == Pathway.SEER && hasLivingNearby(player)) {
-                act(player, 9, 0.25F); // observing with Spirit Vision is a Seer's act
+                act(player, 9, 0.15F, null); // observing with Spirit Vision is a Seer's act
             }
         } else if (d.spirituality() < d.maxSpirituality()) {
             float regen = Pathway.regenPerSecond(d.sequence());
-            if (player.getMainHandItem().getItem() instanceof io.github.n252g2.beyonder.item.StaffItem) {
+            if (player.getMainHandItem().getItem() instanceof io.github.n252g2.beyonder.item.StaffItem && Equipment.isDrawn(player)) {
                 regen *= 1.5F; // the crescent staff gathers spirit
             }
             d.setSpirituality(d.spirituality() + regen);

@@ -49,7 +49,9 @@ public final class GunClient {
     private GunClient() {}
 
     private static boolean holdingGun(LocalPlayer player) {
-        return player != null && player.getMainHandItem().getItem() instanceof RevolverItem;
+        // only a drawn gun (from the weapon slot) handles like a gun
+        return player != null && player.getMainHandItem().getItem() instanceof RevolverItem
+                && io.github.n252g2.beyonder.core.Equipment.isDrawn(player);
     }
 
     // ------------------------------------------------------------------ input
@@ -99,6 +101,7 @@ public final class GunClient {
         }
         boolean aiming = RevolverItem.isAiming(player);
         recoil = 1.0F;
+        PlayerAnimator.start(player, io.github.n252g2.beyonder.core.PlayerAnim.RECOIL, 0);
         float kick = RevolverItem.kick(stack, aiming);
         player.setXRot(player.getXRot() - kick);
         player.setYRot(player.getYRot() + (player.getRandom().nextFloat() - 0.5F) * kick * 0.5F);
@@ -121,6 +124,7 @@ public final class GunClient {
         }
         reloadAnim = RevolverItem.stats(stack).reloadTicks();
         reloadTicks = reloadAnim;
+        PlayerAnimator.start(player, io.github.n252g2.beyonder.core.PlayerAnim.RELOAD, reloadAnim);
         PacketDistributor.sendToServer(new GunActionPayload(GunActionPayload.RELOAD));
     }
 
@@ -182,7 +186,9 @@ public final class GunClient {
     public static final IClientItemExtensions EXTENSIONS = new IClientItemExtensions() {
         @Override
         public HumanoidModel.ArmPose getArmPose(LivingEntity entity, InteractionHand hand, ItemStack stack) {
-            return HumanoidModel.ArmPose.CROSSBOW_HOLD; // a two-handed shooting stance in third person
+            // aiming: a two-handed shooting stance; otherwise the drawn-weapon stance does the posing
+            return entity.isUsingItem() && entity.getUseItem() == stack ? HumanoidModel.ArmPose.CROSSBOW_HOLD
+                    : HumanoidModel.ArmPose.ITEM;
         }
 
         @Override

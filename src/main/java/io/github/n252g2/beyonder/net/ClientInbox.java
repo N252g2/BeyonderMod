@@ -16,6 +16,8 @@ public final class ClientInbox {
     private static final Queue<BrewStartPayload> BREWS = new ConcurrentLinkedQueue<>();
     private static final Map<Integer, CharacterSyncPayload> CHARACTERS = new ConcurrentHashMap<>();
     private static volatile int characterVersion;
+    private static final Map<Integer, EquipStatePayload> EQUIP = new ConcurrentHashMap<>();
+    private static final Queue<PlayerAnimPayload> ANIMS = new ConcurrentLinkedQueue<>();
 
     private ClientInbox() {}
 
@@ -46,6 +48,23 @@ public final class ClientInbox {
         return characterVersion;
     }
 
+    public static void accept(EquipStatePayload payload) {
+        EQUIP.put(payload.entityId(), payload);
+    }
+
+    /** What the server last said a player has drawn and visibly equipped, or null. */
+    public static EquipStatePayload equipment(int entityId) {
+        return EQUIP.get(entityId);
+    }
+
+    public static void accept(PlayerAnimPayload payload) {
+        ANIMS.add(payload);
+    }
+
+    public static PlayerAnimPayload pollAnim() {
+        return ANIMS.poll();
+    }
+
     public static void accept(BrewStartPayload payload) {
         BREWS.add(payload);
     }
@@ -73,6 +92,8 @@ public final class ClientInbox {
         VISIONS.clear();
         BREWS.clear();
         CHARACTERS.clear();
+        EQUIP.clear();
+        ANIMS.clear();
         characterVersion++;
     }
 }

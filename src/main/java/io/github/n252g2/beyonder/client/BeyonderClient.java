@@ -50,12 +50,33 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(GunClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(GunClient::onComputeFov);
         NeoForge.EVENT_BUS.addListener(GunClient::onRenderLayer);
+        NeoForge.EVENT_BUS.addListener(EquipmentClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(EquipmentClient::onScreenOpening);
+        NeoForge.EVENT_BUS.addListener(EquipmentClient::onInteraction);
+        NeoForge.EVENT_BUS.addListener(EquipmentClient::onRenderHand);
+        NeoForge.EVENT_BUS.addListener(PlayerAnimator::onClientTick);
+        modBus.addListener(BeyonderClient::onAddLayers);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
         event.register(SpiritVision.KEY);
         event.register(AbilityKeys.USE);
         event.register(AbilityKeys.NEXT);
+        event.register(EquipmentClient.DRAW);
+        event.register(EquipmentClient.SWAP);
+        for (var key : EquipmentClient.BELT) {
+            event.register(key);
+        }
+    }
+
+    /** Sheathed weapons are drawn on both player models (wide and slim). */
+    @SuppressWarnings("unchecked")
+    private static void onAddLayers(net.neoforged.neoforge.client.event.EntityRenderersEvent.AddLayers event) {
+        for (net.minecraft.client.resources.PlayerSkin.Model model : event.getSkins()) {
+            if (event.getSkin(model) instanceof net.minecraft.client.renderer.entity.player.PlayerRenderer renderer) {
+                renderer.addLayer(new SheathLayer(renderer));
+            }
+        }
     }
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
