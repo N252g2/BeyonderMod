@@ -19,11 +19,13 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Decompile
         run: ./gradlew createMinecraftArtifacts --stacktrace
-      - name: Collect
+      - name: Decompile with Vineflower
         run: |
-          find build -name "*.jar" -exec ls -la {} \;
-          mkdir out && cp $(find build -name "*.jar" | grep -i sources | grep -iv extra | head -n1) out/sources.jar
-          ls -la out
+          curl -sSL -o vf.jar https://repo1.maven.org/maven2/org/vineflower/vineflower/1.10.1/vineflower-1.10.1.jar
+          mkdir -p dec
+          java -Xmx6g -jar vf.jar -log=WARN build/moddev/artifacts/neoforge-21.1.213.jar dec/ > /dev/null
+          ls dec | head
+          mkdir out && (cd dec && find . -name "*.jar" -o -type d | head -3; zip -qr ../out/sources.jar . ) && ls -la out
       - name: Commit
         run: |
           mkdir -p ref && cp out/sources.jar ref/sources.jar
