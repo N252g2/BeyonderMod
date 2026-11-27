@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "beyonder:block/red_bricks",
+    "top": "beyonder:block/red_bricks",
+    "side": "beyonder:block/red_bricks"
+  }
+}

@@ -3,6 +3,12 @@
   "values": [
     "beyonder:tingen_cobble_slab",
     "beyonder:soot_brick_slab",
-    "beyonder:slate_roof_slab"
+    "beyonder:slate_roof_slab",
+    "beyonder:stock_brick_slab",
+    "beyonder:red_brick_slab",
+    "beyonder:ashlar_slab",
+    "beyonder:clay_roof_slab",
+    "beyonder:flagstone_slab",
+    "beyonder:weathered_plank_slab"
   ]
 }

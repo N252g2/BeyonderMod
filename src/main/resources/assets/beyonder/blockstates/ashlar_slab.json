@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "beyonder:block/ashlar_slab"
+    },
+    "type=top": {
+      "model": "beyonder:block/ashlar_slab_top"
+    },
+    "type=double": {
+      "model": "beyonder:block/ashlar"
+    }
+  }
+}

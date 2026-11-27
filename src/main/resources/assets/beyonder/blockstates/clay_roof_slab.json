@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "beyonder:block/clay_roof_slab"
+    },
+    "type=top": {
+      "model": "beyonder:block/clay_roof_slab_top"
+    },
+    "type=double": {
+      "model": "beyonder:block/clay_roof_tiles"
+    }
+  }
+}

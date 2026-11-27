@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "beyonder:tingen_cobble_wall",
-    "beyonder:soot_brick_wall"
+    "beyonder:soot_brick_wall",
+    "beyonder:stock_brick_wall",
+    "beyonder:red_brick_wall",
+    "beyonder:ashlar_wall"
   ]
 }

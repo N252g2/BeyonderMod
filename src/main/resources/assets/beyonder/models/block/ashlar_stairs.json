@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "beyonder:block/ashlar",
+    "top": "beyonder:block/ashlar",
+    "side": "beyonder:block/ashlar"
+  }
+}

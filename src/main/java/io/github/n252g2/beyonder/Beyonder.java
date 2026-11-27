@@ -5,6 +5,7 @@ import io.github.n252g2.beyonder.block.ChimneyBlock;
 import io.github.n252g2.beyonder.block.GasLampBlock;
 import io.github.n252g2.beyonder.block.LampPostBlock;
 import io.github.n252g2.beyonder.content.BeyonderContent;
+import io.github.n252g2.beyonder.content.CityBlocks;
 import io.github.n252g2.beyonder.core.Abilities;
 import io.github.n252g2.beyonder.core.BeyonderAttachments;
 import io.github.n252g2.beyonder.core.Pathway;
@@ -147,6 +148,7 @@ public class Beyonder {
                 output.accept(SOOT_BRICK_WALL_ITEM.get());
                 output.accept(LIT_WINDOW_ITEM.get());
                 output.accept(CHIMNEY_ITEM.get());
+                CityBlocks.tabItems().forEach(item -> output.accept(item.get()));
                 output.accept(SEER_POTION.get());
                 output.accept(CLOWN_POTION.get());
                 output.accept(MAGICIAN_POTION.get());
@@ -166,6 +168,7 @@ public class Beyonder {
 
     public Beyonder(IEventBus modBus, ModContainer container) {
         BeyonderContent.init();
+        CityBlocks.init();
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         TABS.register(modBus);

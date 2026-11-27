@@ -1,6 +1,11 @@
 {
   "replace": false,
   "values": [
-    "beyonder:apothecary_bench"
+    "beyonder:apothecary_bench",
+    "beyonder:weathered_planks",
+    "beyonder:weathered_plank_stairs",
+    "beyonder:weathered_plank_slab",
+    "beyonder:dark_timber",
+    "beyonder:crate"
   ]
 }

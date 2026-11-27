@@ -3,6 +3,11 @@
   "values": [
     "beyonder:tingen_cobble_stairs",
     "beyonder:soot_brick_stairs",
-    "beyonder:slate_roof_stairs"
+    "beyonder:slate_roof_stairs",
+    "beyonder:stock_brick_stairs",
+    "beyonder:red_brick_stairs",
+    "beyonder:ashlar_stairs",
+    "beyonder:clay_roof_stairs",
+    "beyonder:weathered_plank_stairs"
   ]
 }

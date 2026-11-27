@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "beyonder:block/ashlar_pillar_top",
+    "side": "beyonder:block/ashlar_pillar"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "beyonder:block/dark_timber_top",
+    "side": "beyonder:block/dark_timber"
+  }
+}

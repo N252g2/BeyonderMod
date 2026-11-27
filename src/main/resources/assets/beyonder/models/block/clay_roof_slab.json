@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "beyonder:block/clay_roof_tiles",
+    "top": "beyonder:block/clay_roof_tiles",
+    "side": "beyonder:block/clay_roof_tiles"
+  }
+}

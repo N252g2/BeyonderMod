@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=y": {
+      "model": "beyonder:block/dark_timber"
+    },
+    "axis=z": {
+      "model": "beyonder:block/dark_timber_horizontal",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "beyonder:block/dark_timber_horizontal",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

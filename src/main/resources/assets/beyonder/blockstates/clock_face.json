@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "beyonder:block/clock_face"
+    },
+    "facing=east": {
+      "model": "beyonder:block/clock_face",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "beyonder:block/clock_face",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "beyonder:block/clock_face",
+      "y": 270
+    }
+  }
+}

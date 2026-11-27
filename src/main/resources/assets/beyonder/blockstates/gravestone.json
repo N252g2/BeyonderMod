@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "beyonder:block/gravestone"
+    },
+    "facing=east": {
+      "model": "beyonder:block/gravestone",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "beyonder:block/gravestone",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "beyonder:block/gravestone",
+      "y": 270
+    }
+  }
+}

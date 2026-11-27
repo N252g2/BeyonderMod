@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "beyonder:block/flagstone_slab"
+    },
+    "type=top": {
+      "model": "beyonder:block/flagstone_slab_top"
+    },
+    "type=double": {
+      "model": "beyonder:block/flagstones"
+    }
+  }
+}
