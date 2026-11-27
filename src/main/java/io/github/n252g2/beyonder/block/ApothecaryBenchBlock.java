@@ -1,7 +1,7 @@
 package io.github.n252g2.beyonder.block;
 
+import io.github.n252g2.beyonder.brewing.Brewing;
 import io.github.n252g2.beyonder.brewing.Formula;
-import io.github.n252g2.beyonder.core.Beyonders;
 import io.github.n252g2.beyonder.item.FormulaItem;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,6 @@ import java.util.function.Supplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.particles.ColorParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -41,11 +40,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * An apothecary's bench: a heavy table with a spirit burner and flasks. Use it while holding a potion
- * formula and carrying the ingredients plus a water bottle; after a few seconds of bubbling the
- * potion is ready and coloured smoke rises from the flask.
+ * formula and carrying the ingredients plus a water bottle: they go into the flask and the brewing
+ * minigame opens (see {@code BrewingScreen}). How well you brew decides the potion's quality.
  */
 public class ApothecaryBenchBlock extends Block {
-    public static final int BREW_TICKS = 70;
     private static final VoxelShape SHAPE = Shapes.or(
             Block.box(0, 12, 0, 16, 15, 16),      // table top
             Block.box(1, 0, 1, 3, 12, 3), Block.box(13, 0, 1, 15, 12, 3),
@@ -71,8 +69,8 @@ public class ApothecaryBenchBlock extends Block {
         if (level.isClientSide || !(player instanceof ServerPlayer sp)) {
             return ItemInteractionResult.SUCCESS;
         }
-        if (sp.getCooldowns().isOnCooldown(formulaItem)) {
-            sp.displayClientMessage(Component.literal("The flask is still bubbling.").withStyle(ChatFormatting.GRAY), true);
+        if (Brewing.isBrewing(sp)) {
+            sp.displayClientMessage(Component.literal("You are already brewing.").withStyle(ChatFormatting.GRAY), true);
             return ItemInteractionResult.CONSUME;
         }
         brew(sp, (ServerLevel) level, pos, formulaItem);
@@ -124,35 +122,7 @@ public class ApothecaryBenchBlock extends Block {
             }
         }
 
-        player.getCooldowns().addCooldown(formulaItem, BREW_TICKS);
-        level.playSound(null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1.0F, 0.8F);
-        level.playSound(null, pos, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 0.8F, 1.0F);
-        level.sendParticles(ParticleTypes.BUBBLE_POP, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 20, 0.2, 0.1, 0.2, 0.02);
-        player.displayClientMessage(Component.literal("The flask begins to bubble…").withStyle(ChatFormatting.DARK_AQUA), true);
-
-        // Bubbling while it brews, then the finish.
-        for (int t = 10; t < BREW_TICKS; t += 10) {
-            Beyonders.later(player, t, () -> {
-                level.sendParticles(ParticleTypes.BUBBLE_POP, pos.getX() + 0.35, pos.getY() + 1.3, pos.getZ() + 0.45, 6, 0.08, 0.05, 0.08, 0.01);
-                level.sendParticles(ParticleTypes.WITCH, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, 2, 0.2, 0.1, 0.2, 0.0);
-                level.playSound(null, pos, SoundEvents.BUBBLE_COLUMN_BUBBLE_POP, SoundSource.BLOCKS, 0.5F, 1.2F);
-            });
-        }
-        Beyonders.later(player, BREW_TICKS, () -> finish(player, level, pos, formula));
-    }
-
-    private static void finish(ServerPlayer player, ServerLevel level, BlockPos pos, Formula formula) {
-        ColorParticleOption smoke = ColorParticleOption.create(ParticleTypes.ENTITY_EFFECT, 0xFF000000 | formula.smokeColor());
-        level.sendParticles(smoke, pos.getX() + 0.5, pos.getY() + 1.4, pos.getZ() + 0.5, 40, 0.25, 0.4, 0.25, 1.0);
-        level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, pos.getX() + 0.35, pos.getY() + 1.4, pos.getZ() + 0.45, 3, 0.05, 0.1, 0.05, 0.01);
-        level.playSound(null, pos, SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.BLOCKS, 1.0F, 0.7F);
-        level.playSound(null, pos, SoundEvents.BOTTLE_FILL_DRAGONBREATH, SoundSource.BLOCKS, 0.8F, 0.9F);
-        ItemStack potion = new ItemStack(formula.result());
-        if (!player.getInventory().add(potion)) {
-            player.drop(potion, false);
-        }
-        player.displayClientMessage(Component.literal("The potion settles. ")
-                .append(potion.getHoverName()).append(" is ready.").withStyle(ChatFormatting.GOLD), true);
+        Brewing.start(player, level, pos, formula);
     }
 
     private static boolean isWaterBottle(ItemStack stack) {

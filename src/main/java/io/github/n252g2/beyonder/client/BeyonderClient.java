@@ -7,7 +7,9 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import io.github.n252g2.beyonder.content.BeyonderContent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
+import net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.ConfigurationScreen;
@@ -24,6 +26,7 @@ public class BeyonderClient {
         modBus.addListener(BeyonderClient::onRegisterKeys);
         modBus.addListener(BeyonderClient::onRegisterReloadListeners);
         modBus.addListener(BeyonderClient::onRegisterGuiLayers);
+        modBus.addListener(BeyonderClient::onRegisterExtensions);
 
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onRenderFog);
         NeoForge.EVENT_BUS.addListener(TingenAtmosphere::onFogColor);
@@ -39,6 +42,11 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(SpiritRenderer::onRenderStage);
         NeoForge.EVENT_BUS.addListener(SpiritMarkers::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(SpiritMarkers::onLoggingOut);
+        NeoForge.EVENT_BUS.addListener(GunClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(BrewingScreen::onClientTick);
+        NeoForge.EVENT_BUS.addListener(GunClient::onInteraction);
+        NeoForge.EVENT_BUS.addListener(GunClient::onComputeFov);
+        NeoForge.EVENT_BUS.addListener(GunClient::onRenderLayer);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {
@@ -49,6 +57,11 @@ public class BeyonderClient {
 
     private static void onRegisterGuiLayers(RegisterGuiLayersEvent event) {
         event.registerAboveAll(Beyonder.id("beyonder_hud"), BeyonderHud::render);
+        event.registerAboveAll(Beyonder.id("gun_hud"), GunClient::renderHud);
+    }
+
+    private static void onRegisterExtensions(RegisterClientExtensionsEvent event) {
+        event.registerItem(GunClient.EXTENSIONS, BeyonderContent.REVOLVER.get());
     }
 
     private static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {

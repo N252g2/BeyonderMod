@@ -44,6 +44,7 @@ public final class BeyonderServerEvents {
         }
         Beyonders.forget(event.getEntity());
         Abilities.forget(event.getEntity());
+        io.github.n252g2.beyonder.brewing.Brewing.forget(event.getEntity());
     }
 
     private static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {

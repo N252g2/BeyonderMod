@@ -99,6 +99,10 @@ public final class AbilityKeys {
             if (player == null || mc.level == null) {
                 continue;
             }
+            if (GunClient.isHoldingGun()) {
+                GunClient.tryReload(mc, mc.player);
+                continue;
+            }
             Ability ability = current(player);
             if (ability == null) {
                 player.displayClientMessage(Component.literal("You have no abilities yet. Advance to Sequence 8.").withStyle(ChatFormatting.GRAY), true);

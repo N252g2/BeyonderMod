@@ -173,6 +173,14 @@ public final class Beyonders {
      * the vision's climax, so the flash and the result arrive together.
      */
     public static void drinkPotion(ServerPlayer player, Pathway pathway, int sequence) {
+        drinkPotion(player, pathway, sequence, 1);
+    }
+
+    /**
+     * As above, for a potion of the given brewing quality (0 rough … 3 perfect). A better brew is
+     * gentler on an undigested spirit: the gamble is less likely to go wrong.
+     */
+    public static void drinkPotion(ServerPlayer player, Pathway pathway, int sequence, int quality) {
         if (PENDING.containsKey(player.getUUID())) {
             return; // already in a vision
         }
@@ -219,7 +227,8 @@ public final class Beyonders {
         } else {
             // The next Sequence: safe when fully digested, a gamble otherwise.
             float undigested = 1.0F - d.digestion() / 100.0F;
-            if (undigested > 0.0F && player.getRandom().nextFloat() < undigested * 0.9F) {
+            float risk = 1.0F + 0.15F * (1 - quality); // rough 1.15x, fine 0.85x, perfect 0.7x
+            if (undigested > 0.0F && player.getRandom().nextFloat() < undigested * 0.9F * risk) {
                 float loss = 50.0F + undigested * 60.0F;
                 kind = d.lossOfControl() + loss >= 100.0F ? PotionVisionPayload.FATAL : PotionVisionPayload.FAILURE;
                 outcome = () -> {

@@ -58,6 +58,51 @@ public enum Formula {
         return ingredients;
     }
 
+    // ------------------------------------------------------------------ the brewing minigame
+
+    /** Half the width of the safe temperature band (0..1 scale). Higher Sequences are less forgiving. */
+    public float bandHalfWidth() {
+        return switch (sequence) {
+            case 9 -> 0.12F;
+            case 8 -> 0.10F;
+            default -> 0.08F;
+        };
+    }
+
+    /** Width of the "add now" zone on the timing bar (0..1). */
+    public float zoneWidth() {
+        return switch (sequence) {
+            case 9 -> 0.22F;
+            case 8 -> 0.18F;
+            default -> 0.14F;
+        };
+    }
+
+    /** Ticks for the timing marker to sweep across the bar and back. */
+    public int sweepTicks() {
+        return switch (sequence) {
+            case 9 -> 36;
+            case 8 -> 30;
+            default -> 24;
+        };
+    }
+
+    /** Ticks the steady phases need: warming the base, dissolving each ingredient, letting it settle. */
+    public static final int HEAT_TICKS = 50;
+    public static final int DISSOLVE_TICKS = 30;
+    public static final int SETTLE_TICKS = 40;
+
+    /** The fastest a brew can honestly be finished; the server rejects anything quicker. */
+    public int minBrewTicks() {
+        int steady = HEAT_TICKS + ingredients.size() * (DISSOLVE_TICKS + 5) + SETTLE_TICKS;
+        return (int) (steady * 0.8F);
+    }
+
+    public static Formula byIndex(int index) {
+        Formula[] all = values();
+        return index >= 0 && index < all.length ? all[index] : null;
+    }
+
     private static Map<Supplier<? extends Item>, Integer> ingredients(Object... pairs) {
         Map<Supplier<? extends Item>, Integer> map = new LinkedHashMap<>();
         for (int i = 0; i < pairs.length; i += 2) {

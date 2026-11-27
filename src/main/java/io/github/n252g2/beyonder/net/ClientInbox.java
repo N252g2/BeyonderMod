@@ -13,6 +13,7 @@ public final class ClientInbox {
     private static final Map<Integer, BeyonderSyncPayload> BEYONDERS = new ConcurrentHashMap<>();
     private static final Queue<SpiritMarkerPayload> MARKERS = new ConcurrentLinkedQueue<>();
     private static final Queue<PotionVisionPayload> VISIONS = new ConcurrentLinkedQueue<>();
+    private static final Queue<BrewStartPayload> BREWS = new ConcurrentLinkedQueue<>();
 
     private ClientInbox() {}
 
@@ -26,6 +27,14 @@ public final class ClientInbox {
 
     public static void accept(PotionVisionPayload payload) {
         VISIONS.add(payload);
+    }
+
+    public static void accept(BrewStartPayload payload) {
+        BREWS.add(payload);
+    }
+
+    public static BrewStartPayload pollBrew() {
+        return BREWS.poll();
     }
 
     public static PotionVisionPayload pollVision() {
@@ -45,5 +54,6 @@ public final class ClientInbox {
         BEYONDERS.clear();
         MARKERS.clear();
         VISIONS.clear();
+        BREWS.clear();
     }
 }

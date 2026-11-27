@@ -657,22 +657,58 @@ def bench_textures():
 
 
 def all_060():
-    starlit_lavender(); dream_moss(); wraith_ash(); shadow_silk()
-    phantom_eye(); mirror_shard(); crimson_spore()
-    formula("seer_formula", (70, 90, 180))
-    formula("clown_formula", (170, 40, 44))
-    formula("magician_formula", (120, 60, 170))
-    coin("copper_penny", (176, 104, 62), (130, 74, 44), [(7, 6), (8, 6), (7, 7), (7, 8), (8, 8), (7, 9)])
-    coin("silver_soli", (196, 202, 212), (140, 146, 160), [(6, 6), (7, 6), (8, 6), (6, 7), (7, 8), (8, 8), (8, 9), (6, 9), (7, 9)])
-    coin("gold_pound", (232, 190, 70), (176, 132, 40), [(6, 5), (7, 5), (8, 5), (7, 6), (7, 7), (6, 8), (7, 8), (8, 8), (7, 9), (6, 10), (7, 10), (8, 10), (9, 10)])
-    revolver()
-    round_item("revolver_round", (150, 110, 70))
-    round_item("silver_round", (220, 226, 236))
     slate_roof_tiles()
     plaster("whitewashed_plaster", False)
     plaster("timber_plaster", True)
     iron_railing()
     bench_textures()
+
+
+# ---------------------------------------------------------------- 3D gun textures
+
+GUN = os.path.join(ITEM, "gun")
+
+
+def gun_textures():
+    rnd = random.Random(71)
+    # Blued steel: deep blue-grey with fine brushing and a cool highlight band.
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            k = 0.92 + 0.08 * math.sin(x * 2.3 + y * 0.2) + (rnd.random() - 0.5) * 0.06
+            if y in (2, 3):
+                k += 0.22
+            # faint engraved scrollwork
+            if abs(math.sin(x * 0.8 + math.sin(y * 0.9) * 1.6) - 0.5 * math.cos(y * 0.7)) < 0.09:
+                k += 0.28
+            px[x, y] = rgb((58, 64, 82), k) + (255,)
+    save(img, GUN, "steel.png")
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = rgb((26, 28, 36), 0.9 + (rnd.random() - 0.5) * 0.12) + (255,)
+    save(img, GUN, "dark.png")
+    # Cylinder: flutes running front to back, with polished lands between them.
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            band = (x + y // 8) % 4
+            k = {0: 0.55, 1: 0.95, 2: 1.15, 3: 0.95}[band] + (rnd.random() - 0.5) * 0.05
+            px[x, y] = rgb((70, 78, 96), k) + (255,)
+    save(img, GUN, "cylinder.png")
+    # Walnut grips with diamond checkering.
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            grain = 0.9 + 0.12 * math.sin(y * 0.7 + math.sin(x * 0.5) * 2.0)
+            check = 0.82 if (x + y) % 3 == 0 or (x - y) % 3 == 0 else 1.0
+            px[x, y] = rgb((112, 64, 38), grain * check + (rnd.random() - 0.5) * 0.05) + (255,)
+    save(img, GUN, "walnut.png")
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = rgb((196, 154, 72), 0.9 + 0.2 * ((x * 3 + y) % 5) / 5) + (255,)
+    save(img, GUN, "brass.png")
 
 
 if __name__ == "__main__":
@@ -684,12 +720,9 @@ if __name__ == "__main__":
     moon_phases()
     aura()
     marker_beam()
-    potion("seer_potion.png", (88, 70, 200), (190, 170, 255))
-    potion("clown_potion.png", (190, 40, 55), (255, 170, 120))
-    potion("magician_potion.png", (40, 130, 150), (150, 240, 230))
-    pendulum()
     sun()
     lit_window()
     chimney_top()
     print("textures written")
     all_060()
+    gun_textures()
