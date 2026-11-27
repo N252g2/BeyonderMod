@@ -430,6 +430,14 @@ def cathedral_plaza(g, cv, rng, marks):
             cv.a[s, z, x] = I("b:lamp_post"); cv.a[s + 1, z, x] = I("b:lamp_post"); cv.a[s + 2, z, x] = I("b:gas_lamp")
             for dx in (-2, 2):
                 cv.a[s, z, x + dx] = I("b:park_bench", facing="south" if z == pz0 + 2 else "north")
+    # flower beds in stone kerbs at the four corners of the plaza
+    for bx, bz in ((px0 + 8, pz0 + 6), (px1 - 14, pz0 + 6), (px0 + 8, pz1 - 10), (px1 - 14, pz1 - 10)):
+        for x in range(bx, bx + 7):
+            for z in range(bz, bz + 5):
+                edge = x in (bx, bx + 6) or z in (bz, bz + 4)
+                cv.a[s - 1, z, x] = I("grass_block")
+                cv.a[s, z, x] = I("b:ashlar_slab", type="bottom") if edge else I(rng.choice(
+                    ("poppy", "red_tulip", "white_tulip", "lily_of_the_valley", "azure_bluet", "oxeye_daisy")))
     # trees in tubs along the west side
     for z in range(pz0 + 6, pz1 - 4, 8):
         cv.a[s - 1, z, px0 + 3] = I("grass_block")
