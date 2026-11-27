@@ -1,0 +1,47 @@
+name: Pack check
+
+# Starts the client with every mod from the published Standard pack (plus this build of Beyonder)
+# and fails if the game doesn't reach the title screen cleanly. Run by hand after pack changes.
+on:
+  workflow_dispatch:
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Fetch the Standard pack's mods
+        run: |
+          mkdir -p run/mods
+          curl -sSL https://n252g2.github.io/BeyonderLauncher/pack/manifest.json -o manifest.json
+          URL=$(python3 -c "import json;m=json.load(open('manifest.json'));print([e for e in m['editions'] if e['id']=='standard'][0]['mrpackUrl'])")
+          curl -sSL "$URL" -o pack.mrpack && unzip -oq pack.mrpack -d pack
+          python3 - <<'PY'
+          import json, urllib.request, os
+          idx = json.load(open("pack/modrinth.index.json"))
+          for f in idx["files"]:
+              p = f["path"]
+              if not p.startswith("mods/") or "beyonder" in p.lower():
+                  continue
+              urllib.request.urlretrieve(f["downloads"][0], os.path.join("run", p))
+              print("got", p)
+          PY
+      - name: Start the client and wait for the title screen
+        run: |
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri >/dev/null
+          export LIBGL_ALWAYS_SOFTWARE=1
+          ( xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClient --console=plain > client.log 2>&1 & )
+          ok=0
+          for i in $(seq 1 160); do
+            if grep -qE "Sound engine started|Created: .*blocks.png-atlas" client.log; then ok=1; sleep 45; break; fi
+            if grep -qE "Crash Report|Mixin apply failed|ModLoadingException|Missing or unsupported mandatory dependencies" client.log; then break; fi
+            sleep 5
+          done
+          pkill -f "net.neoforged" || true; sleep 3
+          grep -nE "Crash Report|Mixin apply failed|ModLoadingException|Exception|mandatory dependencies|Loading [0-9]+ mods|blocks.png-atlas|ERROR" client.log | grep -v "Narrator\|flite\|OpenAL\|SoundEngine" | head -60
+          test $ok = 1 && ! grep -qE "Crash Report|Mixin apply failed|ModLoadingException" client.log
