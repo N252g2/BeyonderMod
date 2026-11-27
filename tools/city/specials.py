@@ -78,7 +78,7 @@ def leftovers(g, cv, rng):
     s = cv.street
     zs, xs = np.nonzero(g.free)
     for z, x in zip(zs, xs):
-        if (x * 13 + z * 7) % 61 == 0 and g.free[max(z - 2, 0):z + 3, max(x - 2, 0):x + 3].all():
+        if (x * 13 + z * 7) % 61 == 0 and g.free[max(z - 3, 0):z + 4, max(x - 3, 0):x + 4].all():
             tree(cv, x, s, z, rng, rng.choice(("plane", "oak", "birch")))
         elif (x * 5 + z * 11) % 37 == 0 and cv.a[s, z, x] == 0:
             cv.a[s, z, x] = I(rng.choice(("short_grass", "fern", "poppy", "dandelion")))
