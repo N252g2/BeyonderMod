@@ -1,4 +1,7 @@
 {
   "replace": false,
-  "values": []
+  "values": [
+    "beyonder:pinstripe_trousers",
+    "beyonder:black_trousers"
+  ]
 }

@@ -1,5 +1,8 @@
 package io.github.n252g2.beyonder.content;
 
+import io.github.n252g2.beyonder.core.Equipment;
+import io.github.n252g2.beyonder.item.ClothingItem;
+
 import io.github.n252g2.beyonder.Beyonder;
 import io.github.n252g2.beyonder.block.ApothecaryBenchBlock;
 import io.github.n252g2.beyonder.brewing.Formula;
@@ -114,6 +117,30 @@ public final class BeyonderContent {
     public static final DeferredItem<BlockItem> IRON_RAILING_ITEM = Beyonder.ITEMS.registerSimpleBlockItem("iron_railing", IRON_RAILING);
 
     /** Everything above, in creative-tab order. */
+    // ---------------------------------------------------------------- clothing (tools/gen_clothing.py draws them)
+    public static final DeferredItem<ClothingItem> TOP_HAT = clothing("top_hat", Equipment.Slot.HAT, ClothingItem.Hat.TOP_HAT, false);
+    public static final DeferredItem<ClothingItem> BOWLER_HAT = clothing("bowler_hat", Equipment.Slot.HAT, ClothingItem.Hat.BOWLER, false);
+    public static final DeferredItem<ClothingItem> FLAT_CAP = clothing("flat_cap", Equipment.Slot.HAT, ClothingItem.Hat.FLAT_CAP, false);
+    public static final DeferredItem<ClothingItem> FROCK_COAT = clothing("frock_coat", Equipment.Slot.COAT, ClothingItem.Hat.NONE, true);
+    public static final DeferredItem<ClothingItem> OVERCOAT = clothing("overcoat", Equipment.Slot.COAT, ClothingItem.Hat.NONE, true);
+    public static final DeferredItem<ClothingItem> TWEED_JACKET = clothing("tweed_jacket", Equipment.Slot.COAT, ClothingItem.Hat.NONE, true);
+    public static final DeferredItem<ClothingItem> BURGUNDY_WAISTCOAT = clothing("burgundy_waistcoat", Equipment.Slot.SHIRT, ClothingItem.Hat.NONE, false);
+    public static final DeferredItem<ClothingItem> BROCADE_WAISTCOAT = clothing("brocade_waistcoat", Equipment.Slot.SHIRT, ClothingItem.Hat.NONE, false);
+    public static final DeferredItem<ClothingItem> LEATHER_GLOVES = clothing("leather_gloves", Equipment.Slot.GLOVES, ClothingItem.Hat.NONE, true);
+    public static final DeferredItem<ClothingItem> WHITE_GLOVES = clothing("white_gloves", Equipment.Slot.GLOVES, ClothingItem.Hat.NONE, true);
+    public static final DeferredItem<ClothingItem> PINSTRIPE_TROUSERS = clothing("pinstripe_trousers", Equipment.Slot.TROUSERS, ClothingItem.Hat.NONE, false);
+    public static final DeferredItem<ClothingItem> BLACK_TROUSERS = clothing("black_trousers", Equipment.Slot.TROUSERS, ClothingItem.Hat.NONE, false);
+    public static final DeferredItem<ClothingItem> OXFORD_SHOES = clothing("oxford_shoes", Equipment.Slot.SHOES, ClothingItem.Hat.NONE, false);
+    public static final DeferredItem<ClothingItem> RIDING_BOOTS = clothing("riding_boots", Equipment.Slot.SHOES, ClothingItem.Hat.NONE, false);
+
+    public static final List<DeferredItem<ClothingItem>> CLOTHING = List.of(TOP_HAT, BOWLER_HAT, FLAT_CAP, FROCK_COAT,
+            OVERCOAT, TWEED_JACKET, BURGUNDY_WAISTCOAT, BROCADE_WAISTCOAT, LEATHER_GLOVES, WHITE_GLOVES,
+            PINSTRIPE_TROUSERS, BLACK_TROUSERS, OXFORD_SHOES, RIDING_BOOTS);
+
+    private static DeferredItem<ClothingItem> clothing(String name, Equipment.Slot slot, ClothingItem.Hat hat, boolean sleeves) {
+        return Beyonder.ITEMS.registerItem(name, p -> new ClothingItem(p, slot, hat, sleeves));
+    }
+
     public static List<DeferredItem<? extends Item>> tabItems() {
         return List.of(SLATE_ROOF_TILES_ITEM, SLATE_ROOF_STAIRS_ITEM, SLATE_ROOF_SLAB_ITEM, WHITEWASHED_PLASTER_ITEM,
                 TIMBER_PLASTER_ITEM, IRON_RAILING_ITEM, APOTHECARY_BENCH_ITEM,
@@ -121,7 +148,9 @@ public final class BeyonderContent {
                 STARLIT_LAVENDER, DREAM_MOSS, WRAITH_ASH, SHADOW_SILK, PHANTOM_EYE, MIRROR_SHARD, CRIMSON_SPORE,
                 COPPER_PENNY, SILVER_SOLI, GOLD_POUND,
                 REVOLVER, DEATH_KNELL, REVOLVER_ROUND, SILVER_ROUND,
-                LONGSWORD, SWORD_CANE, CRIMSON_GREATSWORD, CRESCENT_STAFF);
+                LONGSWORD, SWORD_CANE, CRIMSON_GREATSWORD, CRESCENT_STAFF,
+                TOP_HAT, BOWLER_HAT, FLAT_CAP, FROCK_COAT, OVERCOAT, TWEED_JACKET, BURGUNDY_WAISTCOAT, BROCADE_WAISTCOAT,
+                LEATHER_GLOVES, WHITE_GLOVES, PINSTRIPE_TROUSERS, BLACK_TROUSERS, OXFORD_SHOES, RIDING_BOOTS);
     }
 
     /** Loads this class so its entries join the registers before they fire. */

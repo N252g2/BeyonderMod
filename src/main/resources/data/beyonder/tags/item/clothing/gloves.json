@@ -1,4 +1,7 @@
 {
   "replace": false,
-  "values": []
+  "values": [
+    "beyonder:leather_gloves",
+    "beyonder:white_gloves"
+  ]
 }

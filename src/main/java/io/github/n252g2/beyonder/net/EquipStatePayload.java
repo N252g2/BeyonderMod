@@ -10,11 +10,11 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * Server to clients: what others can see of a player's equipment. {@code visible} holds the main
- * weapon, the sidearm (off hand), then the six clothing slots.
+ * weapon, the sidearm (off hand), the six clothing slots, then the three belt slots.
  */
 public record EquipStatePayload(int entityId, boolean drawn, boolean clothesOverArmour, List<ItemStack> visible)
         implements CustomPacketPayload {
-    public static final int WEAPON = 0, SIDEARM = 1, CLOTHING = 2;
+    public static final int WEAPON = 0, SIDEARM = 1, CLOTHING = 2, BELT = 8;
 
     public static final Type<EquipStatePayload> TYPE = new Type<>(Beyonder.id("equip_state"));
     public static final StreamCodec<RegistryFriendlyByteBuf, EquipStatePayload> STREAM_CODEC =

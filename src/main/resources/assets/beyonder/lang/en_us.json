@@ -82,5 +82,19 @@
   "key.beyonder.belt_2": "Potion Belt 2",
   "key.beyonder.belt_3": "Potion Belt 3",
   "beyonder.configuration.beyonderHud": "Beyonder HUD",
-  "beyonder.configuration.beyonderHud.tooltip": "Beyonder's hotbar, weapon and belt panels and its health, armour, hunger and air bars. Turn off to get vanilla's back."
+  "beyonder.configuration.beyonderHud.tooltip": "Beyonder's hotbar, weapon and belt panels and its health, armour, hunger and air bars. Turn off to get vanilla's back.",
+  "item.beyonder.top_hat": "Top Hat",
+  "item.beyonder.bowler_hat": "Bowler Hat",
+  "item.beyonder.flat_cap": "Tweed Flat Cap",
+  "item.beyonder.frock_coat": "Black Frock Coat",
+  "item.beyonder.overcoat": "Brown Overcoat",
+  "item.beyonder.tweed_jacket": "Tweed Jacket",
+  "item.beyonder.burgundy_waistcoat": "Burgundy Waistcoat",
+  "item.beyonder.brocade_waistcoat": "Green Brocade Waistcoat",
+  "item.beyonder.leather_gloves": "Leather Gloves",
+  "item.beyonder.white_gloves": "White Cotton Gloves",
+  "item.beyonder.pinstripe_trousers": "Pinstripe Trousers",
+  "item.beyonder.black_trousers": "Black Trousers",
+  "item.beyonder.oxford_shoes": "Oxford Shoes",
+  "item.beyonder.riding_boots": "Riding Boots"
 }

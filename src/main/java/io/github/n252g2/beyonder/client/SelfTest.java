@@ -59,10 +59,19 @@ public final class SelfTest {
                 server.getCommands().performPrefixedCommand(src, "gamerule doDaylightCycle false");
                 sp.setYRot(0.0F);
                 sp.setXRot(0.0F);
-                server.getCommands().performPrefixedCommand(src, "item replace entity @a armor.chest with minecraft:iron_chestplate");
+                server.getCommands().performPrefixedCommand(src, "item replace entity @a armor.feet with minecraft:iron_boots");
                 var eq = io.github.n252g2.beyonder.core.Equipment.get(sp).items();
                 eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_1.ordinal(), new ItemStack(net.minecraft.world.item.Items.BREAD, 5));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_2.ordinal(),
+                        net.minecraft.world.item.alchemy.PotionContents.createItemStack(net.minecraft.world.item.Items.POTION, net.minecraft.world.item.alchemy.Potions.HEALING));
                 eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_3.ordinal(), new ItemStack(net.minecraft.world.item.Items.HONEY_BOTTLE, 2));
+                // an outfit (the iron boots hide the shoes until "clothes over armour" is on)
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.HAT.ordinal(), new ItemStack(BeyonderContent.TOP_HAT.get()));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.COAT.ordinal(), new ItemStack(BeyonderContent.FROCK_COAT.get()));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.SHIRT.ordinal(), new ItemStack(BeyonderContent.BURGUNDY_WAISTCOAT.get()));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.TROUSERS.ordinal(), new ItemStack(BeyonderContent.PINSTRIPE_TROUSERS.get()));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.SHOES.ordinal(), new ItemStack(BeyonderContent.OXFORD_SHOES.get()));
+                eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.GLOVES.ordinal(), new ItemStack(BeyonderContent.LEATHER_GLOVES.get()));
                 sp.giveExperienceLevels(7);
                 io.github.n252g2.beyonder.core.Beyonders.get(sp).become(io.github.n252g2.beyonder.core.Pathway.SEER, 8);
                 io.github.n252g2.beyonder.core.Beyonders.get(sp).setDigestion(37.0F);
@@ -133,7 +142,44 @@ public final class SelfTest {
             case 313 -> shot(mc, "18_hud_drawn_after_hit");
             case 316 -> EquipmentClient.toggleDraw(mc.player, io.github.n252g2.beyonder.core.Equipment.get(mc.player));
             case 340 -> shot(mc, "19_hud_sheathed");
-            case 350 -> mc.stop();
+            case 342 -> {
+                mc.options.hideGui = true;
+                mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+                PacketDistributor.sendToServer(new EquipActionPayload(EquipActionPayload.TOGGLE_CLOTHES));
+                io.github.n252g2.beyonder.core.Equipment.get(mc.player).setClothesOverArmour(true);
+            }
+            case 352 -> shot(mc, "20_outfit_front_clothes_over_armour");
+            case 354 -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
+            case 362 -> shot(mc, "21_outfit_back");
+            case 364 -> server.execute(() -> {
+                ServerPlayer sp = server.getPlayerList().getPlayer(mc.player.getUUID());
+                if (sp != null) {
+                    var eq = io.github.n252g2.beyonder.core.Equipment.get(sp).items();
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.HAT.ordinal(), new ItemStack(BeyonderContent.BOWLER_HAT.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.COAT.ordinal(), new ItemStack(BeyonderContent.OVERCOAT.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.SHIRT.ordinal(), new ItemStack(BeyonderContent.BROCADE_WAISTCOAT.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.TROUSERS.ordinal(), new ItemStack(BeyonderContent.BLACK_TROUSERS.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.SHOES.ordinal(), new ItemStack(BeyonderContent.RIDING_BOOTS.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.GLOVES.ordinal(), new ItemStack(BeyonderContent.WHITE_GLOVES.get()));
+                }
+            });
+            case 366 -> mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
+            case 376 -> shot(mc, "22_outfit2_front");
+            case 378 -> server.execute(() -> {
+                ServerPlayer sp = server.getPlayerList().getPlayer(mc.player.getUUID());
+                if (sp != null) {
+                    var eq = io.github.n252g2.beyonder.core.Equipment.get(sp).items();
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.HAT.ordinal(), new ItemStack(BeyonderContent.FLAT_CAP.get()));
+                    eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.COAT.ordinal(), new ItemStack(BeyonderContent.TWEED_JACKET.get()));
+                }
+            });
+            case 388 -> shot(mc, "23_outfit3_front");
+            case 390 -> mc.options.setCameraType(CameraType.FIRST_PERSON);
+            case 398 -> {
+                mc.options.hideGui = false;
+            }
+            case 404 -> shot(mc, "24_first_person_sleeves");
+            case 410 -> mc.stop();
             default -> {}
         }
     }

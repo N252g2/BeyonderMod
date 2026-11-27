@@ -1,4 +1,8 @@
 {
   "replace": false,
-  "values": []
+  "values": [
+    "beyonder:frock_coat",
+    "beyonder:overcoat",
+    "beyonder:tweed_jacket"
+  ]
 }

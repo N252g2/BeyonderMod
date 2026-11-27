@@ -60,6 +60,9 @@ public class BeyonderClient {
             NeoForge.EVENT_BUS.addListener(SelfTest::onClientTick);
         }
         modBus.addListener(BeyonderClient::onAddLayers);
+        modBus.addListener(ClothingLayer::registerDefinitions);
+        modBus.addListener(ClothingLayer::addLayers);
+        NeoForge.EVENT_BUS.addListener(ClothingLayer::onRenderArm);
     }
 
     private static void onRegisterKeys(RegisterKeyMappingsEvent event) {

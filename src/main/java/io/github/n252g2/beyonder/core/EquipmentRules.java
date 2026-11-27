@@ -200,6 +200,9 @@ public final class EquipmentRules {
         for (Equipment.Slot s : Equipment.Slot.CLOTHING) {
             visible.add(d.items().get(s.ordinal()).copy());
         }
+        for (Equipment.Slot s : Equipment.Slot.BELTS) {
+            visible.add(d.items().get(s.ordinal()).copyWithCount(1));
+        }
         return new EquipStatePayload(player.getId(), d.drawn(), d.clothesOverArmour(), visible);
     }
 
@@ -210,6 +213,9 @@ public final class EquipmentRules {
         h = h * 31 + ItemStack.hashItemAndComponents(d.items().get(Equipment.Slot.WEAPON.ordinal()));
         h = h * 31 + ItemStack.hashItemAndComponents(player.getOffhandItem());
         for (Equipment.Slot s : Equipment.Slot.CLOTHING) {
+            h = h * 31 + ItemStack.hashItemAndComponents(d.items().get(s.ordinal()));
+        }
+        for (Equipment.Slot s : Equipment.Slot.BELTS) {
             h = h * 31 + ItemStack.hashItemAndComponents(d.items().get(s.ordinal()));
         }
         return h;

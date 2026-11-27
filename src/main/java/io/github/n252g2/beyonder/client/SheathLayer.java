@@ -49,6 +49,7 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             sidearm = s.item(EquipStatePayload.SIDEARM);
             drawn = s.drawn();
         }
+        belt(pose, buffers, light, player);
         // Mid-draw the weapon is still on the body; mid-sheathe it isn't there yet.
         float draw = PlayerAnimator.progress(player, PlayerAnim.DRAW, partialTick);
         float sheathe = PlayerAnimator.progress(player, PlayerAnim.SHEATHE, partialTick);
@@ -75,6 +76,38 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
     }
 
+    /** Belt slot positions: front right, front left, and the small of the back. {x, z, facing back?} */
+    private static final float[][] BELT_SPOTS = {{-0.15F, -0.175F, 0.0F}, {0.15F, -0.175F, 0.0F}, {0.0F, 0.175F, 1.0F}};
+
+    /** What hangs from the belt, small: potions, food, whatever the belt slots hold. */
+    private void belt(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player) {
+        for (int i = 0; i < Equipment.Slot.BELTS.length; i++) {
+            ItemStack stack;
+            if (player.isLocalPlayer()) {
+                stack = Equipment.item(player, Equipment.Slot.BELTS[i]);
+            } else {
+                EquipStatePayload s = ClientInbox.equipment(player.getId());
+                stack = s == null ? ItemStack.EMPTY : s.item(EquipStatePayload.BELT + i);
+            }
+            if (stack.isEmpty()) {
+                continue;
+            }
+            float[] spot = BELT_SPOTS[i];
+            pose.pushPose();
+            getParentModel().body.translateAndRotate(pose);
+            pose.translate(spot[0], 0.76F, spot[1]);
+            pose.mulPose(Axis.ZP.rotationDegrees(180.0F)); // model space is upside down; items hang upright
+            if (spot[2] > 0.0F) {
+                pose.mulPose(Axis.YP.rotationDegrees(180.0F));
+            }
+            pose.mulPose(Axis.ZP.rotationDegrees(i == 0 ? 8.0F : -8.0F));
+            pose.scale(0.26F, 0.26F, 0.26F);
+            Minecraft.getInstance().getItemRenderer().renderStatic(player, stack, ItemDisplayContext.NONE, false, pose, buffers,
+                    player.level(), light, OverlayTexture.NO_OVERLAY, player.getId() + 10 + i);
+            pose.popPose();
+        }
+    }
+
     private static Mount preferred(Kind kind) {
         return switch (kind) {
             case GUN -> Mount.RIGHT_HIP;
@@ -97,10 +130,11 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
                 float side = mount == Mount.LEFT_HIP ? 1.0F : -1.0F;
                 if (gun) {
                     // holstered: barrel down, grip up and to the back
-                    pose.translate(side * 0.30F, 0.62F, 0.02F);
+                    // low on the thigh: the grip at the belt, the barrel along the leg
+                    pose.translate(side * 0.30F, 0.86F, 0.02F);
                     pose.mulPose(Axis.XP.rotationDegrees(90.0F));
-                    pose.mulPose(Axis.XP.rotationDegrees(-12.0F));
-                    pose.scale(0.55F, 0.55F, 0.55F);
+                    pose.mulPose(Axis.XP.rotationDegrees(-8.0F));
+                    pose.scale(0.5F, 0.5F, 0.5F);
                 } else {
                     // a blade hangs from the belt, tip down and back, flat against the leg
                     pose.translate(side * 0.31F, 0.58F, 0.05F);
