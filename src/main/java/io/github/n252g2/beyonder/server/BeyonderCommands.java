@@ -33,6 +33,7 @@ public final class BeyonderCommands {
         CommandDispatcher<CommandSourceStack> d = event.getDispatcher();
         d.register(Commands.literal("beyonder")
                 .then(BuildCommand.node())
+                .then(io.github.n252g2.beyonder.server.city.CityCommand.node())
                 .then(Commands.literal("status")
                         .executes(ctx -> status(ctx.getSource(), ctx.getSource().getPlayerOrException()))
                         .then(Commands.argument("player", EntityArgument.player()).requires(s -> s.hasPermission(2))

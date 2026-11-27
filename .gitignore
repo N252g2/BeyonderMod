@@ -42,3 +42,6 @@ repo/
 ### Beyonder ###
 /tools/out/
 __pycache__/
+src/main/resources/data/beyonder/city/tingen.bin
+tools/city/out/
+tools/city/__pycache__/

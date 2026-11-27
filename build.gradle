@@ -57,6 +57,9 @@ neoForge {
             if (System.getenv('BEYONDER_SELFTEST') != null) {
                 programArguments.addAll '--quickPlaySingleplayer', 'smoke', '--width', '1280', '--height', '720'
                 systemProperty 'beyonder.selftest', 'true'
+                if (System.getenv('BEYONDER_CITYTEST') != null) {
+                    systemProperty 'beyonder.selftest.mode', 'city'
+                }
             }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -65,6 +68,11 @@ neoForge {
         server {
             server()
             programArgument '--nogui'
+            // CI city run: build Tingen as soon as the world is up, then stop
+            if (System.getenv('BEYONDER_CITYTEST') != null) {
+                systemProperty 'beyonder.citytest', 'true'
+                systemProperty 'beyonder.city.budget', '400'
+            }
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }
 

@@ -27,6 +27,10 @@ public final class BeyonderServerEvents {
         NeoForge.EVENT_BUS.addListener(BeyonderServerEvents::onChangeDimension);
         NeoForge.EVENT_BUS.addListener(BeyonderServerEvents::onStartTracking);
         NeoForge.EVENT_BUS.addListener(BeyonderCommands::register);
+        NeoForge.EVENT_BUS.addListener(io.github.n252g2.beyonder.server.city.CityBuilder::onTick);
+        NeoForge.EVENT_BUS.addListener(io.github.n252g2.beyonder.server.city.CityBuilder::onSpawnCheck);
+        NeoForge.EVENT_BUS.addListener(io.github.n252g2.beyonder.server.city.CityBuilder::onServerStarted);
+        NeoForge.EVENT_BUS.addListener(io.github.n252g2.beyonder.server.city.CityBuilder::onServerStopped);
         NeoForge.EVENT_BUS.addListener(BeyonderServerEvents::onNameFormat);
         NeoForge.EVENT_BUS.addListener(BeyonderServerEvents::onTabListName);
         NeoForge.EVENT_BUS.addListener(BeyonderServerEvents::onIncomingDamage);

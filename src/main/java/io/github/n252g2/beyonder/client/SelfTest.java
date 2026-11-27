@@ -40,6 +40,10 @@ public final class SelfTest {
             return;
         }
         t++;
+        if ("city".equals(System.getProperty("beyonder.selftest.mode"))) {
+            CityShots.tick(mc, server, t);
+            return;
+        }
         if (t % 20 == 0) {
             org.slf4j.LoggerFactory.getLogger("beyonder-selftest").info("self-test tick {}", t);
         }

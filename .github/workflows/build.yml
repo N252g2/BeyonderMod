@@ -28,6 +28,16 @@ jobs:
           sudo apt-get install -y -qq glslang-tools >/dev/null
           python3 tools/check_shaders.py glslangValidator
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate the city
+        run: |
+          pip install --quiet numpy scipy pillow
+          python3 tools/city/build_city.py
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
