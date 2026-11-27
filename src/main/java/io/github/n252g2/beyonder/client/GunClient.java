@@ -88,7 +88,7 @@ public final class GunClient {
         }
     }
 
-    private static void tryFire(Minecraft mc, LocalPlayer player) {
+    static void tryFire(Minecraft mc, LocalPlayer player) {
         ItemStack stack = player.getMainHandItem();
         if (reloadTicks > 0 || player.getCooldowns().isOnCooldown(stack.getItem())) {
             return;

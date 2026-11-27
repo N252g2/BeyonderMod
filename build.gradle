@@ -53,6 +53,11 @@ neoForge {
     runs {
         client {
             client()
+            // CI screenshot run: open the 'smoke' world and play the scripted self-test
+            if (System.getenv('BEYONDER_SELFTEST') != null) {
+                programArguments.addAll '--quickPlaySingleplayer', 'smoke', '--width', '1280', '--height', '720'
+                systemProperty 'beyonder.selftest', 'true'
+            }
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
         }

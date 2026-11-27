@@ -55,6 +55,9 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(EquipmentClient::onRenderHand);
         NeoForge.EVENT_BUS.addListener(PlayerAnimator::onClientTick);
+        if (SelfTest.ENABLED) {
+            NeoForge.EVENT_BUS.addListener(SelfTest::onClientTick);
+        }
         modBus.addListener(BeyonderClient::onAddLayers);
     }
 

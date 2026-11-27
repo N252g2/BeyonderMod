@@ -79,7 +79,7 @@ public final class EquipmentClient {
         }
     }
 
-    private static void toggleDraw(LocalPlayer player, EquipmentData d) {
+    static void toggleDraw(LocalPlayer player, EquipmentData d) {
         ItemStack weapon = Equipment.item(player, Equipment.Slot.WEAPON);
         int kind = Equipment.Kind.of(weapon).ordinal();
         if (d.drawn()) {
