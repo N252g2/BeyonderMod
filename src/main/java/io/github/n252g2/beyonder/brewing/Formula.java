@@ -63,27 +63,27 @@ public enum Formula {
     /** Half the width of the safe temperature band (0..1 scale). Higher Sequences are less forgiving. */
     public float bandHalfWidth() {
         return switch (sequence) {
-            case 9 -> 0.12F;
-            case 8 -> 0.10F;
-            default -> 0.08F;
+            case 9 -> 0.145F;
+            case 8 -> 0.12F;
+            default -> 0.10F;
         };
     }
 
     /** Width of the "add now" zone on the timing bar (0..1). */
     public float zoneWidth() {
         return switch (sequence) {
-            case 9 -> 0.22F;
-            case 8 -> 0.18F;
-            default -> 0.14F;
+            case 9 -> 0.26F;
+            case 8 -> 0.21F;
+            default -> 0.17F;
         };
     }
 
     /** Ticks for the timing marker to sweep across the bar and back. */
     public int sweepTicks() {
         return switch (sequence) {
-            case 9 -> 36;
-            case 8 -> 30;
-            default -> 24;
+            case 9 -> 42;
+            case 8 -> 36;
+            default -> 30;
         };
     }
 

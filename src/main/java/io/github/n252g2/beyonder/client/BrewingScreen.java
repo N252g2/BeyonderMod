@@ -57,9 +57,10 @@ public class BrewingScreen extends Screen {
     private int step;
     private int ticks, phaseTicks;
     private float heat = 0.08F, prevHeat = 0.08F, heatVel;
-    private float bandCenter, bandBase;
+    private float bandCenter, prevBandCenter, bandBase;
     private float stability = 1.0F, prevStability = 1.0F;
-    private float progress;
+    private float progress, prevProgress;
+    private float prevLiquidMix;
     private float zoneCenter;
     private int points;
     private boolean bellowsKey, bellowsMouse;
@@ -83,6 +84,7 @@ public class BrewingScreen extends Screen {
         }
         bandBase = 0.45F + random.nextFloat() * 0.15F;
         bandCenter = bandBase;
+        prevBandCenter = bandBase;
     }
 
     /** Opens the minigame when the server says the ingredients are in the flask. */
@@ -110,6 +112,15 @@ public class BrewingScreen extends Screen {
         phaseTicks++;
         prevHeat = heat;
         prevStability = stability;
+        prevBandCenter = bandCenter;
+        prevProgress = progress;
+        prevLiquidMix = liquidMix;
+        for (float[] b : bubbles) {
+            b[4] = b[1];
+        }
+        for (float[] st : steam) {
+            st[4] = st[1];
+        }
         if (flashTicks > 0) {
             flashTicks--;
         }
@@ -123,7 +134,7 @@ public class BrewingScreen extends Screen {
 
         // Bellows push the heat up with a little momentum; the burner cools when left alone.
         boolean pumping = bellowsKey || bellowsMouse;
-        heatVel += pumping ? 0.0042F : -0.0026F;
+        heatVel += pumping ? 0.0036F : -0.0022F;
         heatVel *= 0.86F;
         heat = Mth.clamp(heat + heatVel, 0.0F, 1.0F);
         if (heat <= 0.0F || heat >= 1.0F) {
@@ -134,7 +145,7 @@ public class BrewingScreen extends Screen {
         }
 
         // The band wanders a little once ingredients are in.
-        float drift = phase == Phase.SETTLE ? 0.0F : 0.05F * Math.min(step, 3) * Mth.sin(ticks * 0.045F);
+        float drift = phase == Phase.SETTLE ? 0.0F : 0.035F * Math.min(step, 3) * Mth.sin(ticks * 0.04F);
         bandCenter = Mth.clamp(bandBase + drift, 0.12F, 0.86F);
         float half = formula.bandHalfWidth();
         float off = Math.abs(heat - bandCenter) - half;
@@ -142,12 +153,12 @@ public class BrewingScreen extends Screen {
 
         // Stability.
         if (!inBand) {
-            stability -= 0.0035F + off * 0.05F;
+            stability -= 0.0024F + off * 0.035F;
         } else {
             stability = Math.min(1.0F, stability + 0.0008F);
         }
-        if (heat > 0.94F) {
-            stability -= 0.012F; // boiling over
+        if (heat > 0.96F) {
+            stability -= 0.009F; // boiling over
             if (ticks % 4 == 0) {
                 sound(SoundEvents.BUBBLE_COLUMN_WHIRLPOOL_INSIDE, 1.3F, 0.25F);
             }
@@ -228,7 +239,7 @@ public class BrewingScreen extends Screen {
         } else if (d <= half) {
             gained = 1;
         } else {
-            stability -= 0.22F;
+            stability -= 0.16F;
             say("Too early or too late. The flask shudders!", 0xFFE0604A);
             sound(SoundEvents.GLASS_HIT, 0.6F, 0.9F);
             zoneCenter = 0.22F + random.nextFloat() * 0.56F;
@@ -249,7 +260,7 @@ public class BrewingScreen extends Screen {
         points += Math.max(0, gained);
         sound(SoundEvents.BOTTLE_FILL, 1.0F + step * 0.1F, 0.8F);
         for (int i = 0; i < 12; i++) {
-            bubbles.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.6F + random.nextFloat() * 0.8F, 1.0F});
+            bubbles.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.6F + random.nextFloat() * 0.8F, 1.0F, 0.0F});
         }
         phase = Phase.DISSOLVE;
         phaseTicks = 0;
@@ -260,7 +271,7 @@ public class BrewingScreen extends Screen {
     private void succeed() {
         float timing = steps.isEmpty() ? 1.0F : points / (2.0F * steps.size());
         float score = 0.65F * timing + 0.35F * stability;
-        quality = score >= 0.85F ? 3 : score >= 0.6F ? 2 : score >= 0.35F ? 1 : 0;
+        quality = score >= 0.8F ? 3 : score >= 0.55F ? 2 : score >= 0.3F ? 1 : 0;
         phase = Phase.DONE;
         liquidMix = 1.0F;
         sound(SoundEvents.BREWING_STAND_BREW, 1.0F, 1.0F);
@@ -295,11 +306,11 @@ public class BrewingScreen extends Screen {
     private void tickParticles() {
         float rate = phase == Phase.FAILED ? 0.0F : heat * heat * 1.6F;
         while (random.nextFloat() < rate) {
-            bubbles.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.4F + heat * 1.2F, 1.0F});
+            bubbles.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.4F + heat * 1.2F, 1.0F, 0.0F});
             rate -= 1.0F;
         }
         if (heat > 0.65F && random.nextFloat() < heat - 0.55F) {
-            steam.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.5F + random.nextFloat() * 0.5F, 1.0F});
+            steam.add(new float[] {random.nextFloat() * 2 - 1, 0.0F, 0.5F + random.nextFloat() * 0.5F, 1.0F, 0.0F});
         }
         for (Iterator<float[]> it = bubbles.iterator(); it.hasNext(); ) {
             float[] b = it.next();
@@ -387,13 +398,28 @@ public class BrewingScreen extends Screen {
 
     // ------------------------------------------------------------------ drawing
 
+    /** A plain dark veil: the blurred world behind a screen costs too much every frame. */
+    @Override
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partial) {
+        g.fill(0, 0, width, height, 0x90080610);
+    }
+
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
         super.render(g, mouseX, mouseY, partial);
+        // Draw every rectangle in one batch; GuiGraphics otherwise flushes after each fill.
+        g.drawManaged(() -> drawScene(g, partial));
+        drawIngredients(g, (width - W) / 2, (height - H) / 2);
+    }
+
+    private void drawScene(GuiGraphics g, float partial) {
         int x0 = (width - W) / 2;
         int y0 = (height - H) / 2;
         float h = Mth.lerp(partial, prevHeat, heat);
         float st = Mth.lerp(partial, prevStability, stability);
+        float band = Mth.lerp(partial, prevBandCenter, bandCenter);
+        float prog = Mth.lerp(partial, prevProgress, progress);
+        float mix = Mth.lerp(partial, prevLiquidMix, liquidMix);
 
         // Panel: dark glass with brass edges, like the HUD.
         g.fill(x0, y0, x0 + W, y0 + H, 0xF0141018);
@@ -407,16 +433,15 @@ public class BrewingScreen extends Screen {
         g.drawCenteredString(font, title, x0 + W / 2, y0 + 8, GOLD);
         g.drawCenteredString(font, phaseText(), x0 + W / 2, y0 + 20, MUTED);
 
-        drawIngredients(g, x0, y0);
-        drawThermometer(g, x0 + 22, y0 + 54, h);
+        drawThermometer(g, x0 + 22, y0 + 54, h, band);
         drawStability(g, x0 + W - 34, y0 + 54, st);
-        drawFlask(g, x0 + W / 2, y0 + 150, h, partial);
+        drawFlask(g, x0 + W / 2, y0 + 150, h, partial, mix);
 
         // Steady-phase progress under the flask.
         if (phase == Phase.HEAT || phase == Phase.DISSOLVE || phase == Phase.SETTLE) {
             int bx = x0 + W / 2 - 50;
             g.fill(bx, y0 + 168, bx + 100, y0 + 171, 0xFF1B1622);
-            g.fill(bx, y0 + 168, bx + (int) (100 * Mth.clamp(progress, 0, 1)), y0 + 171, GOLD);
+            g.fill(bx, y0 + 168, bx + (int) (100 * Mth.clamp(prog, 0, 1)), y0 + 171, GOLD);
         }
         if (phase == Phase.ADD) {
             drawTimingBar(g, x0 + 50, y0 + 165, W - 100, partial);
@@ -475,19 +500,19 @@ public class BrewingScreen extends Screen {
         }
     }
 
-    private void drawThermometer(GuiGraphics g, int x, int y, float h) {
+    private void drawThermometer(GuiGraphics g, int x, int y, float h, float band) {
         int height = 96;
         g.drawCenteredString(font, "Heat", x + 5, y - 11, MUTED);
         g.fill(x - 1, y - 1, x + 11, y + height + 1, BRASS);
         g.fill(x, y, x + 10, y + height, 0xFF0E0C12);
         float half = formula.bandHalfWidth();
-        int bandTop = y + height - (int) (height * Math.min(1.0F, bandCenter + half));
-        int bandBottom = y + height - (int) (height * Math.max(0.0F, bandCenter - half));
+        int bandTop = y + height - Math.round(height * Math.min(1.0F, band + half));
+        int bandBottom = y + height - Math.round(height * Math.max(0.0F, band - half));
         g.fill(x, bandTop, x + 10, bandBottom, 0x60D8B25A);
         g.fill(x, bandTop, x + 10, bandTop + 1, GOLD);
         g.fill(x, bandBottom - 1, x + 10, bandBottom, GOLD);
         int top = y + height - (int) (height * h);
-        int mercury = h > 0.94F ? 0xFFFF5030 : 0xFFC8302C;
+        int mercury = h > 0.96F ? 0xFFFF5030 : 0xFFC8302C;
         g.fill(x + 3, top, x + 7, y + height, mercury);
         g.fill(x + 3, top, x + 4, y + height, 0x60FFFFFF);
         // the bulb
@@ -523,12 +548,12 @@ public class BrewingScreen extends Screen {
         g.fill(m - 1, y - 3, m + 1, y + 13, 0xFFFFFFFF);
     }
 
-    private void drawFlask(GuiGraphics g, int cx, int bottom, float h, float partial) {
+    private void drawFlask(GuiGraphics g, int cx, int bottom, float h, float partial, float mix) {
         int r = 30;
         int cy = bottom - r - 8;
         int water = 0xFF6E9CC0;
         int potion = 0xFF000000 | formula.smokeColor();
-        int liquid = lerpColor(water, potion, liquidMix);
+        int liquid = lerpColor(water, potion, mix);
         if (phase == Phase.FAILED) {
             liquid = 0xFF3A3236;
         }
@@ -539,7 +564,8 @@ public class BrewingScreen extends Screen {
         g.fill(cx - 18, bottom - 2, cx - 15, bottom + 4, BRASS);
         g.fill(cx + 15, bottom - 2, cx + 18, bottom + 4, BRASS);
         if (phase != Phase.FAILED && phase != Phase.DONE) {
-            int flame = 3 + (int) (h * 12) + (random.nextInt(3));
+            float time = ticks + partial;
+            int flame = 3 + (int) (h * 12 + 1.5F + 1.5F * Mth.sin(time * 0.9F) * Mth.sin(time * 0.37F));
             for (int i = 0; i < flame; i++) {
                 int w = Math.max(1, (flame - i) / 2);
                 int color = i < flame / 3 ? 0xFF3A6CF0 : i < flame * 2 / 3 ? 0xFFFFB040 : 0xFFFFE890;
@@ -577,7 +603,7 @@ public class BrewingScreen extends Screen {
 
         // Bubbles rise through the liquid; steam rises from the neck.
         for (float[] b : bubbles) {
-            float yy = 1.0F - b[1];
+            float yy = 1.0F - Mth.lerp(partial, b[4], b[1]);
             float top = surface;
             if (yy < top) {
                 continue;
@@ -588,7 +614,7 @@ public class BrewingScreen extends Screen {
         }
         for (float[] s : steam) {
             int sx = cx + (int) (s[0] * 6);
-            int sy = cy - r - 32 - (int) (s[1] * 30);
+            int sy = cy - r - 32 - (int) (Mth.lerp(partial, s[4], s[1]) * 30);
             int a = (int) (110 * s[3]);
             g.fill(sx - 2, sy - 2, sx + 2, sy + 2, (a << 24) | 0xD0D0D8);
         }
