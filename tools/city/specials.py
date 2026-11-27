@@ -763,6 +763,8 @@ def college_range(rng, w, d, storeys, wall, trim, roof, lit=0.4, door=True):
         v.fill(xd - 1, top + 1, 0, xd + 1, top + 1, 0, trim.stairs("south", "top"))
     for x in range(2, w - 3, 9):
         pt.chimney_stack(v, x, d // 2, top, ridge + 1, wall, rng.random() < 0.4, 2)
+    if wall is pt.RED or wall is pt.STOCK:
+        pt.ivy(v, rng, 0, w - 1, top - 1, 0, "south", 0.18)
     for k in range(storeys - 1):
         pt.stair_run(v, w - 2, 3, 4 * k + 1, 4, "oak")
     for k in range(storeys):
@@ -1433,3 +1435,32 @@ def churches(g, cv, rng, marks):
         cv.stamp(v, x, z, facing=facing)
         reserve(g, x, z, x + fw - 1, z + fd - 1)
         marks["church_" + key] = (x + fw // 2, s, z + fd // 2, 0)
+
+
+# ---------------------------------------------------------------- civic buildings along the avenues
+
+
+@landmark
+def civic(g, cv, rng, marks):
+    s = cv.street
+    plans = [
+        ("library", "Tingen Public Library", (200, 183), "north", 34, 26, 3, 4, dict(dome=True, arched=True)),
+        ("police", "Tingen Police Headquarters", (150, 160), "south", 30, 22, 3, 4, dict(wall="b:red_bricks")),
+        ("infirmary", "Tingen Infirmary", (520, 352), "north", 40, 24, 3, 4, dict(wall="b:stock_bricks", lit=0.6)),
+        ("courier", "The Tingen Courier", (60, 352), "north", 24, 20, 3, 3, dict(wall="b:red_bricks")),
+        ("hotel", "Grand Hotel Tussock", (380, 338), "south", 40, 22, 4, 4, dict(lit=0.7, arched=True)),
+        ("museum", "Tingen Museum", (300, 196), "north", 36, 26, 2, 6, dict(dome=True)),
+    ]
+    for key, name, near, facing, w, d, storeys, cols, kw in plans:
+        dome = kw.pop("dome", False)
+        v = classical(rng, w, d, storeys, cols, name, dome=dome, **kw)
+        spot = find_lot(g, near, v.w, v.d, facing, radius=80)
+        if spot is None:
+            print("no lot for", key)
+            continue
+        x, z = spot
+        fw, fd = (v.w, v.d) if facing in ("north", "south") else (v.d, v.w)
+        ground(g, cv, x, z, x + fw - 1, z + fd - 1, "b:flagstones", clear=False)
+        cv.stamp(v, x, z, facing=facing)
+        reserve(g, x, z, x + fw - 1, z + fd - 1)
+        marks[key] = (x + fw // 2, s, z + (fd + 4 if facing == "south" else -4), 0 if facing == "south" else 180)

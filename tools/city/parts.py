@@ -247,3 +247,15 @@ def furnish(v, x0, x1, z0, z1, y, rng, kind="home"):
 
 def ceiling_lamp(v, x, y, z):
     v.set(x, y, z, S("lantern", hanging="true"))
+
+
+def ivy(v, rng, x0, x1, ytop, z=0, attach="south", density=0.35):
+    """Streaks of ivy hanging on the facade behind row z (attached to the block on the ``attach`` side)."""
+    from world import KEEP as _K
+    for x in range(x0, x1 + 1):
+        if rng.random() > density:
+            continue
+        top = rng.randint(max(1, ytop // 2), ytop)
+        for y in range(0, top + 1):
+            if v.get(x, y, z) in (_K, 0):
+                v.set(x, y, z, S("vine", **{attach: "true"}))

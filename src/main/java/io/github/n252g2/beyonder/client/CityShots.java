@@ -31,7 +31,7 @@ final class CityShots {
             new View("08_station", "station", 0, 22, 30, 180, 18, 6000),
             new View("09_station_shed", "station", 70, 14, -40, 90, 10, 6000),
             new View("10_khoy_university", "university", 30, 30, 10, 90, 22, 6000),
-            new View("11_market", "market", 0, 14, 22, 180, 22, 6000),
+            new View("11_market", "market", 0, 12, 0, 180, 28, 6000),
             new View("12_iron_cross", "iron_cross", 0, 1.6, 0, 180, 0, 6000),
             new View("13_golden_indus", "golden", 0, 25, 40, 180, 22, 6000),
             new View("14_gardens", "gardens", 0, 25, -10, 0, 25, 6000),
