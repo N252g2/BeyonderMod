@@ -64,6 +64,9 @@ public final class SelfTest {
                 eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_1.ordinal(), new ItemStack(net.minecraft.world.item.Items.BREAD, 5));
                 eq.set(io.github.n252g2.beyonder.core.Equipment.Slot.BELT_3.ordinal(), new ItemStack(net.minecraft.world.item.Items.HONEY_BOTTLE, 2));
                 sp.giveExperienceLevels(7);
+                io.github.n252g2.beyonder.core.Beyonders.get(sp).become(io.github.n252g2.beyonder.core.Pathway.SEER, 8);
+                io.github.n252g2.beyonder.core.Beyonders.get(sp).setDigestion(37.0F);
+                io.github.n252g2.beyonder.core.Beyonders.sync(sp);
                 sp.giveExperiencePoints(20);
             });
             case 80 -> {
