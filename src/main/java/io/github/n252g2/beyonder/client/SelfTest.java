@@ -98,10 +98,15 @@ public final class SelfTest {
             case 268 -> shot(mc, "13_sheathed_sword_on_hip");
             case 270 -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             case 278 -> shot(mc, "14_sheathed_back_view");
-            case 280 -> mc.options.setCameraType(CameraType.FIRST_PERSON);
+            case 280 -> {
+                mc.options.setCameraType(CameraType.FIRST_PERSON);
+                mc.options.hideGui = false; // F1 also hides the hand
+            }
             case 284 -> EquipmentClient.toggleDraw(mc.player, io.github.n252g2.beyonder.core.Equipment.get(mc.player));
             case 289 -> shot(mc, "15_first_person_drawing");
             case 300 -> shot(mc, "16_first_person_drawn");
+            case 301 -> mc.player.swing(InteractionHand.MAIN_HAND);
+            case 303 -> shot(mc, "16b_first_person_swing");
             case 302 -> {
                 mc.options.hideGui = false;
                 PlayerAnimator.start(mc.player, io.github.n252g2.beyonder.core.PlayerAnim.CAST, io.github.n252g2.beyonder.core.PlayerAnim.CAST_CARD);

@@ -103,20 +103,20 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
                     pose.scale(0.55F, 0.55F, 0.55F);
                 } else {
                     // a blade hangs from the belt, tip down and back, flat against the leg
-                    pose.translate(side * 0.31F, 0.66F, 0.06F);
-                    pose.mulPose(Axis.XP.rotationDegrees(28.0F));
+                    pose.translate(side * 0.31F, 0.58F, 0.05F);
+                    pose.mulPose(Axis.XP.rotationDegrees(26.0F));
                     pose.mulPose(Axis.YP.rotationDegrees(90.0F));
-                    pose.scale(0.5F, 0.5F, 0.5F);
+                    pose.scale(0.36F, 0.36F, 0.36F);
                 }
             }
             case BACK, BACK_LOW -> {
                 // across the back, hilt over the right shoulder
-                pose.translate(0.0F, mount == Mount.BACK ? 0.36F : 0.5F, 0.2F);
+                pose.translate(0.0F, mount == Mount.BACK ? 0.34F : 0.48F, 0.2F);
                 pose.mulPose(Axis.ZP.rotationDegrees(mount == Mount.BACK ? -38.0F : 38.0F));
                 if (gun) {
                     pose.mulPose(Axis.XP.rotationDegrees(90.0F));
                 }
-                pose.scale(0.55F, 0.55F, 0.55F);
+                pose.scale(0.45F, 0.45F, 0.45F);
             }
         }
         Minecraft.getInstance().getItemRenderer().renderStatic(player, stack, ItemDisplayContext.NONE, false, pose, buffers,

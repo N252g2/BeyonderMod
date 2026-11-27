@@ -184,10 +184,10 @@ public final class PlayerAnimator {
     /** The ready stance for each weapon; a gun or blade in the off hand changes the left arm. */
     static float[] stance(Kind kind, ItemStack offhand) {
         float[] s = switch (kind) {
-            case BLADE -> new float[] {-0.75F, -0.25F, 0.05F, -0.35F, 0.35F, -0.1F};
+            case BLADE -> new float[] {-0.7F, 0.05F, 0.1F, -0.35F, 0.35F, -0.1F};
             case HEAVY -> new float[] {-0.9F, -0.5F, 0.0F, -1.05F, 0.75F, 0.0F};
             case STAFF -> new float[] {-0.55F, -0.15F, 0.0F, -1.0F, 0.55F, 0.0F};
-            case GUN -> new float[] {-0.45F, -0.15F, 0.0F, -0.2F, 0.1F, -0.05F};
+            case GUN -> new float[] {-1.1F, -0.2F, 0.0F, -0.3F, 0.15F, -0.05F};
             case BOW -> new float[] {-0.25F, 0.0F, 0.05F, -0.15F, 0.0F, -0.05F};
             case FISTS -> new float[] {-1.25F, -0.35F, 0.0F, -1.35F, 0.45F, 0.0F};
         };
@@ -281,10 +281,10 @@ public final class PlayerAnimator {
     static float[] reload(float t, int ticks) {
         float thumb = t > 0.2F && t < 0.8F ? Mth.sin(t * Mth.PI * 10.0F) * 0.08F : 0.0F;
         return keys(t, new float[][] {
-                {0.0F, -0.45F, -0.15F, 0.0F, -0.2F, 0.1F, 0.0F},
+                {0.0F, -1.1F, -0.2F, 0.0F, -0.3F, 0.15F, 0.0F},
                 {0.15F, -1.0F, -0.6F, 0.0F, -1.1F + thumb, 0.55F, 0.0F},
                 {0.85F, -1.0F, -0.6F, 0.0F, -1.15F + thumb, 0.6F, 0.0F},
-                {1.0F, -0.45F, -0.15F, 0.0F, -0.2F, 0.1F, 0.0F}});
+                {1.0F, -1.1F, -0.2F, 0.0F, -0.3F, 0.15F, 0.0F}});
     }
 
     static float[] cast(int variant, float t) {

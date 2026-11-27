@@ -133,7 +133,6 @@ public class BeyonderInventoryScreen extends AbstractContainerScreen<InventoryMe
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
         g.drawString(font, "Crafting", 97, 6, MUTED, false);
-        g.drawString(font, "Bag", 8, 73, MUTED, false);
         g.drawString(font, "Clothing", LEFT[0] + 3, -10, GOLD, false);
         g.drawString(font, "Kit", RIGHT[0] + 3, -10, GOLD, false);
         g.drawString(font, "Arms", 78, 54, MUTED, false);
