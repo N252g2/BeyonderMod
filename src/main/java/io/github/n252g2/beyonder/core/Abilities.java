@@ -255,7 +255,7 @@ public final class Abilities {
 
     // ------------------------------------------------------------------ helpers
 
-    private static LivingEntity target(ServerPlayer player, double range) {
+    public static LivingEntity target(ServerPlayer player, double range) {
         Vec3 eye = player.getEyePosition();
         Vec3 look = player.getLookAngle();
         Vec3 end = eye.add(look.scale(range));
@@ -268,7 +268,7 @@ public final class Abilities {
     }
 
     /** Draws a particle line along the player's aim; returns where it stopped. */
-    private static Vec3 trail(ServerPlayer player, double range, ParticleOptions particle) {
+    public static Vec3 trail(ServerPlayer player, double range, ParticleOptions particle) {
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getLookAngle().scale(range));
         BlockHitResult block = player.level().clip(new ClipContext(eye, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player));

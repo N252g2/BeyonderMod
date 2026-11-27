@@ -340,6 +340,341 @@ def chimney_top():
     save(img, BLOCK, "chimney_top.png")
 
 
+
+# ---------------------------------------------------------------- 0.6.0: brewing, coins, guns, blocks
+
+def canvas():
+    return Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+
+
+def put(px, x, y, c, a=255):
+    if 0 <= x < 16 and 0 <= y < 16:
+        px[x, y] = tuple(c) + (a,)
+
+
+def outline(img, color=(24, 22, 30)):
+    """Adds a dark one-pixel outline around the opaque shape, like vanilla item icons."""
+    src = img.copy().load()
+    px = img.load()
+    for y in range(16):
+        for x in range(16):
+            if src[x, y][3] == 0:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < 16 and 0 <= ny < 16 and src[nx, ny][3] > 0:
+                        px[x, y] = color + (255,)
+                        break
+
+
+def starlit_lavender():
+    img = canvas(); px = img.load()
+    stem = (70, 110, 72)
+    for y in range(6, 15):
+        put(px, 8 - (y > 11), y, stem)
+    put(px, 6, 12, stem); put(px, 5, 11, stem)
+    put(px, 10, 10, stem); put(px, 11, 9, stem)
+    buds = [(8, 2), (7, 3), (9, 3), (8, 4), (7, 5), (9, 5), (8, 6), (5, 9), (11, 7), (4, 8), (12, 6)]
+    for i, (x, y) in enumerate(buds):
+        put(px, x, y, (150, 120, 220) if i % 2 else (112, 86, 190))
+    for (x, y) in ((8, 1), (3, 7), (13, 5)):
+        put(px, x, y, (225, 230, 255))  # starlight glints
+    outline(img)
+    save(img, ITEM, "starlit_lavender.png")
+
+
+def dream_moss():
+    img = canvas(); px = img.load()
+    rnd = random.Random(21)
+    for y in range(4, 14):
+        for x in range(3, 13):
+            d = ((x - 8) / 5.2) ** 2 + ((y - 9) / 4.6) ** 2
+            if d < 1.0 and rnd.random() < 0.92:
+                base = (64, 104, 92) if rnd.random() < 0.6 else (84, 128, 120)
+                put(px, x, y, rgb(base, 1.15 - d * 0.4))
+    for (x, y) in ((6, 6), (10, 8), (7, 11), (9, 5)):
+        put(px, x, y, (170, 210, 235))  # dew that glows faintly
+    outline(img)
+    save(img, ITEM, "dream_moss.png")
+
+
+def wraith_ash():
+    img = canvas(); px = img.load()
+    rnd = random.Random(31)
+    # a small heap of grey ash with pale embers
+    for y in range(7, 15):
+        half = (y - 6) * 0.9
+        for x in range(16):
+            if abs(x - 8) <= half and rnd.random() < 0.95:
+                put(px, x, y, rgb((120, 118, 128), 0.8 + rnd.random() * 0.45))
+    for (x, y) in ((7, 9), (10, 12), (5, 13), (9, 10)):
+        put(px, x, y, (190, 220, 230))
+    for (x, y) in ((8, 4), (9, 2), (7, 3)):
+        put(px, x, y, (150, 150, 160), 150)  # drifting wisps
+    outline(img)
+    save(img, ITEM, "wraith_ash.png")
+
+
+def shadow_silk():
+    img = canvas(); px = img.load()
+    # a loose skein of dark thread
+    for t in range(0, 360, 6):
+        a = math.radians(t)
+        for r in (3.6, 4.4):
+            x = 8 + r * math.cos(a)
+            y = 8 + r * 0.75 * math.sin(a)
+            put(px, int(round(x)), int(round(y)), (58, 52, 78) if r < 4 else (88, 80, 118))
+    for i in range(5):
+        put(px, 12 + i // 2, 10 + i, (88, 80, 118))  # loose end
+    put(px, 6, 6, (180, 170, 230)); put(px, 10, 10, (180, 170, 230))
+    outline(img)
+    save(img, ITEM, "shadow_silk.png")
+
+
+def phantom_eye():
+    img = canvas(); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) / 6.0) ** 2 + ((y - 7.5) / 4.2) ** 2
+            if d < 1.0:
+                put(px, x, y, rgb((214, 222, 200), 1.05 - d * 0.35))
+    for y in range(16):
+        for x in range(16):
+            d = ((x - 7.5) / 2.4) ** 2 + ((y - 7.5) / 2.6) ** 2
+            if d < 1.0:
+                put(px, x, y, (60, 190, 170) if d > 0.35 else (12, 28, 30))
+    put(px, 6, 6, (250, 255, 250))
+    outline(img, (30, 40, 44))
+    save(img, ITEM, "phantom_eye.png")
+
+
+def mirror_shard():
+    img = canvas(); px = img.load()
+    poly = [(4, 2), (12, 5), (10, 14), (3, 11)]
+    def inside(x, y):
+        n = len(poly); c = False
+        for i in range(n):
+            x1, y1 = poly[i]; x2, y2 = poly[(i + 1) % n]
+            if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+                c = not c
+        return c
+    for y in range(16):
+        for x in range(16):
+            if inside(x + 0.5, y + 0.5):
+                k = 0.75 + 0.5 * ((x + y) % 7) / 7
+                put(px, x, y, rgb((150, 170, 200), k))
+    for i in range(4):
+        put(px, 6 + i, 5 + i, (240, 245, 255))  # glare streak
+    put(px, 8, 11, (120, 70, 160))  # a shadow that should not be there
+    outline(img)
+    save(img, ITEM, "mirror_shard.png")
+
+
+def crimson_spore():
+    img = canvas(); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 8.5)
+            if d < 4.6:
+                put(px, x, y, rgb((170, 30, 44), 1.25 - d / 6.0))
+            elif d < 6.2 and (x * 7 + y * 3) % 5 == 0:
+                put(px, x, y, (220, 60, 70), 200)  # drifting motes
+    put(px, 6, 6, (255, 170, 160)); put(px, 7, 7, (240, 110, 110))
+    save(img, ITEM, "crimson_spore.png")
+
+
+def formula(name, seal):
+    """A folded sheet of parchment with lines of script and a coloured wax seal."""
+    img = canvas(); px = img.load()
+    paper, shade = (226, 210, 170), (190, 168, 124)
+    for y in range(2, 15):
+        for x in range(3, 13):
+            put(px, x, y, shade if x == 12 or y == 14 else paper)
+    for x in range(3, 13):
+        put(px, x, 2, (240, 228, 196))
+    ink = (70, 56, 48)
+    for y in (4, 6, 8, 10):
+        length = 7 if y != 10 else 4
+        for x in range(4, 4 + length):
+            if (x + y) % 5:
+                put(px, x, y, ink)
+    for (x, y) in ((9, 11), (10, 11), (9, 12), (10, 12), (11, 12), (10, 13)):
+        put(px, x, y, seal)
+    put(px, 9, 11, rgb(seal, 1.4))
+    outline(img, (60, 46, 34))
+    save(img, ITEM, name + ".png")
+
+
+def coin(name, face, rim, mark):
+    img = canvas(); px = img.load()
+    for y in range(16):
+        for x in range(16):
+            d = math.hypot(x - 7.5, y - 7.5)
+            if d < 6.0:
+                c = rim if d > 4.8 else face
+                k = 1.15 - (x + y) / 40.0
+                put(px, x, y, rgb(c, k))
+    for (x, y) in mark:
+        put(px, x, y, rgb(face, 0.62))
+    put(px, 5, 4, (255, 255, 240))
+    outline(img, (40, 30, 24))
+    save(img, ITEM, name + ".png")
+
+
+def revolver():
+    img = canvas(); px = img.load()
+    steel, dark, wood, wood_d = (150, 156, 168), (70, 74, 86), (120, 74, 44), (82, 48, 28)
+    for x in range(3, 15):                 # barrel
+        put(px, x, 4, steel); put(px, x, 5, dark)
+    put(px, 14, 3, steel)                  # front sight
+    for y in range(4, 9):                  # cylinder and frame
+        for x in range(3, 7):
+            put(px, x, y, steel if (x + y) % 2 else dark)
+    put(px, 2, 4, dark); put(px, 2, 3, dark)  # hammer
+    for (x, y) in ((6, 8), (7, 9), (6, 9)):  # trigger guard
+        put(px, x, y, dark)
+    for y in range(7, 14):                 # grip
+        for x in range(1 + (y - 7) // 2, 5 + (y - 7) // 2):
+            put(px, x, y, wood if (x + y) % 3 else wood_d)
+    put(px, 9, 4, (210, 215, 225))         # glint
+    outline(img, (20, 18, 24))
+    save(img, ITEM, "revolver.png")
+
+
+def round_item(name, tip):
+    img = canvas(); px = img.load()
+    brass, brass_d = (200, 160, 70), (140, 104, 40)
+    for (ox, oy) in ((4, 5), (9, 3)):
+        for y in range(oy + 3, oy + 10):
+            put(px, ox, y, brass); put(px, ox + 1, y, brass_d)
+        for y in range(oy, oy + 3):
+            put(px, ox, y, tip); put(px, ox + 1, y, rgb(tip, 0.7))
+        put(px, ox, oy - 1, rgb(tip, 1.2))
+    outline(img, (40, 30, 20))
+    save(img, ITEM, name + ".png")
+
+
+def slate_roof_tiles():
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    rnd = random.Random(41)
+    for row in range(4):
+        y0 = row * 4
+        offset = 0 if row % 2 == 0 else 2
+        for x0 in range(-offset, 16, 4):
+            base = rnd.choice([(62, 66, 80), (56, 60, 74), (70, 72, 86), (52, 56, 70)])
+            for y in range(y0, y0 + 4):
+                for x in range(x0, x0 + 4):
+                    if 0 <= x < 16:
+                        k = 1.0 + (rnd.random() - 0.5) * 0.08
+                        if y == y0 + 3:
+                            k = 0.6   # the shadow under each tile's lip
+                        elif x == x0 or x == x0 + 3 and False:
+                            k = 0.85
+                        if x == x0:
+                            k = min(k, 0.82)
+                        px[x, y] = rgb(base, k) + (255,)
+    save(img, BLOCK, "slate_roof_tiles.png")
+
+
+def plaster(name, timber):
+    img = Image.new("RGBA", (16, 16)); px = img.load()
+    rnd = random.Random(51)
+    for y in range(16):
+        for x in range(16):
+            k = 1.0 + (rnd.random() - 0.5) * 0.07
+            if rnd.random() < 0.04:
+                k -= 0.12  # soot speckle
+            px[x, y] = rgb((206, 200, 186), k) + (255,)
+    if timber:
+        beam, beam_d = (74, 52, 38), (54, 38, 28)
+        for x in range(16):
+            for y in (0, 1, 14, 15):
+                px[x, y] = (beam if y in (0, 14) else beam_d) + (255,)
+        for y in range(16):
+            for x in (0, 1):
+                px[x, y] = (beam if x == 0 else beam_d) + (255,)
+        for i in range(2, 14):  # diagonal brace
+            for w in (0, 1):
+                x = i + w
+                if x < 16:
+                    px[x, 15 - i] = (beam if w == 0 else beam_d) + (255,)
+    save(img, BLOCK, name + ".png")
+
+
+def iron_railing():
+    img = canvas(); px = img.load()
+    iron, iron_l = (36, 38, 46), (70, 74, 88)
+    for x in (1, 5, 9, 13):              # bars, capped with spear points
+        for y in range(3, 16):
+            put(px, x, y, iron); put(px, x + 1, y, iron_l if y % 4 else iron)
+        put(px, x, 2, iron_l); put(px, x + 1, 2, iron_l); put(px, x, 1, iron)
+    for x in range(16):                  # top and bottom rails
+        for y in (4, 14):
+            put(px, x, y, iron_l if x % 2 else iron)
+    save(img, BLOCK, "iron_railing.png")
+    edge = canvas(); epx = edge.load()
+    for y in range(16):
+        for x in (7, 8):
+            put(epx, x, y, iron if x == 7 else iron_l)
+    save(edge, BLOCK, "iron_railing_edge.png")
+
+
+def bench_textures():
+    rnd = random.Random(61)
+    top = Image.new("RGBA", (16, 16)); px = top.load()
+    for y in range(16):
+        for x in range(16):
+            grain = math.sin(y * 0.9 + math.sin(x * 0.35) * 1.5) * 0.06
+            k = 0.95 + grain + (rnd.random() - 0.5) * 0.05
+            if y % 5 == 4:
+                k = 0.72  # plank seams
+            px[x, y] = rgb((122, 84, 58), k) + (255,)
+    for (x, y, c) in ((3, 2, (110, 40, 40)), (11, 7, (70, 90, 150)), (6, 12, (60, 110, 80))):
+        px[x, y] = c + (255,)  # old stains
+    save(top, BLOCK, "apothecary_bench_top.png")
+    wood = Image.new("RGBA", (16, 16)); px = wood.load()
+    for y in range(16):
+        for x in range(16):
+            k = 0.9 + (rnd.random() - 0.5) * 0.08 + (0.06 if x % 4 == 0 else 0)
+            px[x, y] = rgb((84, 56, 38), k) + (255,)
+    save(wood, BLOCK, "apothecary_bench_wood.png")
+    glass = Image.new("RGBA", (16, 16)); px = glass.load()
+    for y in range(16):
+        for x in range(16):
+            if y >= 7:
+                k = 0.85 + 0.3 * (1 - (y - 7) / 9)
+                px[x, y] = rgb((96, 150, 190), k) + (230,)
+            else:
+                px[x, y] = (200, 220, 230, 90)
+            if x in (0, 15):
+                px[x, y] = (150, 170, 185, 200)
+    px[4, 9] = (235, 250, 255, 255); px[5, 12] = (200, 235, 255, 255)
+    save(glass, BLOCK, "apothecary_flask.png")
+    brass = Image.new("RGBA", (16, 16)); px = brass.load()
+    for y in range(16):
+        for x in range(16):
+            px[x, y] = rgb((180, 140, 64), 0.85 + 0.25 * ((x + y) % 4) / 4) + (255,)
+    save(brass, BLOCK, "apothecary_brass.png")
+
+
+def all_060():
+    starlit_lavender(); dream_moss(); wraith_ash(); shadow_silk()
+    phantom_eye(); mirror_shard(); crimson_spore()
+    formula("seer_formula", (70, 90, 180))
+    formula("clown_formula", (170, 40, 44))
+    formula("magician_formula", (120, 60, 170))
+    coin("copper_penny", (176, 104, 62), (130, 74, 44), [(7, 6), (8, 6), (7, 7), (7, 8), (8, 8), (7, 9)])
+    coin("silver_soli", (196, 202, 212), (140, 146, 160), [(6, 6), (7, 6), (8, 6), (6, 7), (7, 8), (8, 8), (8, 9), (6, 9), (7, 9)])
+    coin("gold_pound", (232, 190, 70), (176, 132, 40), [(6, 5), (7, 5), (8, 5), (7, 6), (7, 7), (6, 8), (7, 8), (8, 8), (7, 9), (6, 10), (7, 10), (8, 10), (9, 10)])
+    revolver()
+    round_item("revolver_round", (150, 110, 70))
+    round_item("silver_round", (220, 226, 236))
+    slate_roof_tiles()
+    plaster("whitewashed_plaster", False)
+    plaster("timber_plaster", True)
+    iron_railing()
+    bench_textures()
+
+
 if __name__ == "__main__":
     cobbles()
     soot_bricks()
@@ -357,3 +692,4 @@ if __name__ == "__main__":
     lit_window()
     chimney_top()
     print("textures written")
+    all_060()

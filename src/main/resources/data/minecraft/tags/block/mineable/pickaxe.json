@@ -11,6 +11,12 @@
     "beyonder:soot_brick_stairs",
     "beyonder:soot_brick_slab",
     "beyonder:soot_brick_wall",
-    "beyonder:chimney"
+    "beyonder:chimney",
+    "beyonder:slate_roof_tiles",
+    "beyonder:slate_roof_stairs",
+    "beyonder:slate_roof_slab",
+    "beyonder:whitewashed_plaster",
+    "beyonder:timber_plaster",
+    "beyonder:iron_railing"
   ]
 }

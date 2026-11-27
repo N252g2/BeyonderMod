@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "TTT"
+  ],
+  "key": {
+    "T": {
+      "item": "beyonder:slate_roof_tiles"
+    }
+  },
+  "result": {
+    "id": "beyonder:slate_roof_slab",
+    "count": 6
+  }
+}

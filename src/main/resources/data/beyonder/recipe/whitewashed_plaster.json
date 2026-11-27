@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "CC",
+    "CC"
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:calcite"
+    }
+  },
+  "result": {
+    "id": "beyonder:whitewashed_plaster",
+    "count": 4
+  }
+}

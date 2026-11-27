@@ -4,12 +4,14 @@ import com.mojang.logging.LogUtils;
 import io.github.n252g2.beyonder.block.ChimneyBlock;
 import io.github.n252g2.beyonder.block.GasLampBlock;
 import io.github.n252g2.beyonder.block.LampPostBlock;
+import io.github.n252g2.beyonder.content.BeyonderContent;
 import io.github.n252g2.beyonder.core.Abilities;
 import io.github.n252g2.beyonder.core.BeyonderAttachments;
 import io.github.n252g2.beyonder.core.Pathway;
 import io.github.n252g2.beyonder.item.BeyonderPotionItem;
 import io.github.n252g2.beyonder.item.PendulumItem;
 import io.github.n252g2.beyonder.net.BeyonderNetwork;
+import io.github.n252g2.beyonder.server.BeyonderLoot;
 import io.github.n252g2.beyonder.server.BeyonderServerEvents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -149,6 +151,7 @@ public class Beyonder {
                 output.accept(CLOWN_POTION.get());
                 output.accept(MAGICIAN_POTION.get());
                 output.accept(PENDULUM.get());
+                BeyonderContent.tabItems().forEach(item -> output.accept(item.get()));
             })
             .build());
 
@@ -162,12 +165,14 @@ public class Beyonder {
     }
 
     public Beyonder(IEventBus modBus, ModContainer container) {
+        BeyonderContent.init();
         BLOCKS.register(modBus);
         ITEMS.register(modBus);
         TABS.register(modBus);
         BeyonderAttachments.register(modBus);
         modBus.addListener(BeyonderNetwork::register);
         BeyonderServerEvents.register();
+        BeyonderLoot.register();
         Abilities.registerEvents();
         LOGGER.info("Beyonder loaded. The fog settles over Tingen.");
     }
