@@ -43,5 +43,5 @@ jobs:
             sleep 5
           done
           pkill -f "net.neoforged" || true; sleep 3
-          grep -nE "Crash Report|Mixin apply failed|ModLoadingException|Exception|mandatory dependencies|Loading [0-9]+ mods|blocks.png-atlas|ERROR" client.log | grep -v "Narrator\|flite\|OpenAL\|SoundEngine" | head -60
+          grep -nE -A12 "Crash Report|Mixin apply failed|ModLoadingException|Exception|mandatory dependencies|blocks.png-atlas" client.log | grep -v "Narrator\|flite\|OpenAL\|SoundEngine" | head -60
           test $ok = 1 && ! grep -qE "Crash Report|Mixin apply failed|ModLoadingException" client.log
