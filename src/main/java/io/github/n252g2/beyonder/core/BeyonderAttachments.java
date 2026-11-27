@@ -25,6 +25,15 @@ public final class BeyonderAttachments {
                     .copyOnDeath()
                     .build());
 
+    /**
+     * Clothing, weapon, ammo, accessory, artifact and belt slots. Copied over on death, but death
+     * empties it first unless keepInventory is on (see EquipmentRules).
+     */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<EquipmentData>> EQUIPMENT =
+            TYPES.register("equipment", () -> AttachmentType.serializable(EquipmentData::new)
+                    .copyOnDeath()
+                    .build());
+
     private BeyonderAttachments() {}
 
     public static void register(IEventBus modBus) {

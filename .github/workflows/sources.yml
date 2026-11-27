@@ -21,8 +21,9 @@ jobs:
         run: ./gradlew createMinecraftArtifacts --stacktrace
       - name: Collect
         run: |
-          find build -name "*sources*.jar" | head
-          mkdir out && cp $(find build -name "*sources*.jar" | head -n1) out/sources.jar
+          find build -name "*.jar" -exec ls -la {} \;
+          mkdir out && cp $(find build -name "*.jar" | grep -i sources | grep -iv extra | head -n1) out/sources.jar
+          ls -la out
       - name: Commit
         run: |
           mkdir -p ref && cp out/sources.jar ref/sources.jar
