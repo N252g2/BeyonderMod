@@ -7,7 +7,10 @@ import io.github.n252g2.beyonder.core.Beyonders;
 import io.github.n252g2.beyonder.core.Equipment;
 import io.github.n252g2.beyonder.core.EquipmentRules;
 import io.github.n252g2.beyonder.core.Pathway;
+import com.mojang.authlib.GameProfile;
+import java.util.UUID;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.server.level.ClientInformation;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -22,8 +25,16 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class EquipmentGameTests {
     private EquipmentGameTests() {}
 
+    /** A server player that isn't connected (the test harness can't carry mod packets). */
+    private static ServerPlayer mock(GameTestHelper h) {
+        ServerPlayer p = new ServerPlayer(h.getLevel().getServer(), h.getLevel(),
+                new GameProfile(UUID.randomUUID(), "tester"), ClientInformation.createDefault());
+        p.setPos(h.absoluteVec(new net.minecraft.world.phys.Vec3(1.5, 1.0, 1.5)));
+        return p;
+    }
+
     private static ServerPlayer player(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = mock(h);
         p.getInventory().selected = 0;
         p.getInventory().items.set(0, new ItemStack(Items.BREAD, 3));
         Equipment.get(p).items().set(Equipment.Slot.WEAPON.ordinal(), new ItemStack(BeyonderContent.LONGSWORD.get()));
@@ -32,7 +43,7 @@ public final class EquipmentGameTests {
 
     @GameTest(template = "empty")
     public static void menuHasEquipmentSlots(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = mock(h);
         h.assertTrue(p.inventoryMenu.slots.size() == 46 + Equipment.SIZE,
                 "inventory menu has " + p.inventoryMenu.slots.size() + " slots");
         h.succeed();
@@ -70,7 +81,7 @@ public final class EquipmentGameTests {
 
     @GameTest(template = "empty")
     public static void repeatedActsDigestLess(GameTestHelper h) {
-        ServerPlayer p = h.makeMockServerPlayerInLevel();
+        ServerPlayer p = mock(h);
         BeyonderData d = Beyonders.get(p);
         d.become(Pathway.SEER, 9);
         d.setDigestion(0.0F);

@@ -181,6 +181,9 @@ public final class EquipmentRules {
     // ------------------------------------------------------------------ syncing
 
     public static void anim(ServerPlayer player, PlayerAnim anim, int variant, boolean includeSelf) {
+        if (player.connection == null) {
+            return;
+        }
         PlayerAnimPayload payload = new PlayerAnimPayload(player.getId(), anim.ordinal(), variant);
         if (includeSelf) {
             PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, payload);
@@ -214,6 +217,9 @@ public final class EquipmentRules {
 
     public static void sync(ServerPlayer player) {
         LAST_SENT.put(player.getUUID(), stateHash(player));
+        if (player.connection == null) {
+            return;
+        }
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, state(player));
     }
 

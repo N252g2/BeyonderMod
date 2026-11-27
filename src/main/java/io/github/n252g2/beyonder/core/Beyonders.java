@@ -64,6 +64,9 @@ public final class Beyonders {
 
     /** Sends the player's state to them and to everyone who can see them (for halos). */
     public static void sync(ServerPlayer player) {
+        if (player.connection == null) {
+            return; // not connected (yet): nothing to tell
+        }
         PacketDistributor.sendToPlayersTrackingEntityAndSelf(player, payload(player));
     }
 
