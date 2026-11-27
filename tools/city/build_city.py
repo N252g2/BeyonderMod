@@ -173,6 +173,8 @@ def north_row(rng, L, st, d, lo, ro):
 
 def villa_row(rng, L, st, d, lo, ro):
     segs = []
+    if L < 18 or d < 18:
+        return west_row(rng, L, st, min(d, 12), lo, ro) if L >= 5 and d >= 8 else []
     for w in BL.split_run(rng, L, [20, 22, 24]):
         sty = B.style(rng, rng.choice(("stucco", "red", "redslate", "stucco")))
         sty.lit = 0.4
@@ -273,6 +275,7 @@ def main():
     g = Ground(cv, rng)
     g.built = np.zeros((D, W), bool)
     g.yard = np.zeros((D, W), bool)
+    g.weirs = "--small" in sys.argv          # the outer ring carries the rivers on, so no weirs here
     g.base()
     plan(g)
     g.paint_streets()
@@ -291,7 +294,10 @@ def main():
                    "shed": (500, s + 1, 34, 90), "market_view": (504, s + 26, 262, 180),
                    "docks_view": (568, s + 12, 505, 180)}.items():
         marks.setdefault(k, val)
-    print(f"generated in {time.time() - t0:.1f}s, palette {len(P.states)}")
+    if "--small" not in sys.argv:
+        import ring
+        cv, g, marks = ring.wrap(cv, g, marks, rng, PROFILES)
+    print(f"generated {cv.w}x{cv.d} in {time.time() - t0:.1f}s, palette {len(P.states)}")
     bad = export.check_palette()
     if bad:
         print("UNKNOWN BLOCKS:", bad)

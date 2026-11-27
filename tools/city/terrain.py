@@ -63,6 +63,8 @@ class Ground:
         self.streets = []
         self.rivers = []
         self.lamps = []
+        self.only = np.ones((D, W), bool)        # cells this pass may change
+        self.weirs = True
 
     # ------------------------------------------------------------ base ground
     def base(self):
@@ -84,42 +86,45 @@ class Ground:
         hw = np.full(len(dist), -1.0)
         hw[ok] = river.w[idx[ok]] / 2
         dist = dist.reshape(D, W); hw = hw.reshape(D, W)
-        self.water |= dist <= hw
+        self.water |= (dist <= hw) & self.only
 
     def finish_rivers(self):
         """Embankment walls two thick around the water, a promenade beyond."""
         w2 = ndimage.binary_dilation(self.water, iterations=2)
         w5 = ndimage.binary_dilation(self.water, iterations=5)
-        self.wall = w2 & ~self.water
-        self.prom = w5 & ~w2
-        self.free &= ~w5
+        only = self.only
+        new_water = self.water & only
+        self.wall = (self.wall & ~only) | (w2 & ~self.water & only)
+        self.prom = (self.prom & ~only) | (w5 & ~w2 & only)
+        self.free &= ~(w5 & only)
         cv, s = self.cv, self.cv.street
-        zs, xs = np.nonzero(self.water)
+        zs, xs = np.nonzero(new_water)
         cv.a[s - BED, zs, xs] = I("gravel")
         cv.a[s - BED + 1:s - WATER_TOP + 1, zs, xs] = I("water")
         cv.a[s - WATER_TOP + 1:s, zs, xs] = 0
         # weirs where the rivers leave the city, so the water stays in its channels
         D_, W_ = self.water.shape
         edge = np.zeros_like(self.water)
-        edge[:2, :] = edge[-2:, :] = True
-        edge[:, :2] = edge[:, -2:] = True
-        zs, xs = np.nonzero(self.water & edge)
+        if self.weirs:
+            edge[:2, :] = edge[-2:, :] = True
+            edge[:, :2] = edge[:, -2:] = True
+        zs, xs = np.nonzero(self.water & edge & only)
         cv.a[s - BED - 1:s - WATER_TOP + 1, zs, xs] = I("mossy_stone_bricks")
         cv.a[s - WATER_TOP + 1, zs, xs] = I("b:ashlar_slab", type="bottom")
-        zs, xs = np.nonzero(self.wall)
+        zs, xs = np.nonzero(self.wall & only)
         cv.a[s - BED - 1:s, zs, xs] = I("b:ashlar")
         # water-stained lower courses
         cv.a[s - BED:s - WATER_TOP + 1, zs, xs] = I("mossy_stone_bricks")
         # coping and parapet on the river-side ring
-        inner = self.wall & ndimage.binary_dilation(self.water, iterations=1)
-        outer = self.wall & ~inner
+        inner = self.wall & ndimage.binary_dilation(self.water, iterations=1) & only
+        outer = self.wall & ~inner & only
         zs, xs = np.nonzero(outer)
         cv.a[s - 1, zs, xs] = I("b:ashlar_slab", type="double")
         zs, xs = np.nonzero(inner)
         cv.a[s - 1, zs, xs] = I("b:ashlar")
         cv.a[s, zs, xs] = I("b:ashlar_wall")
-        self.cell[self.prom] = 4
-        zs, xs = np.nonzero(self.prom)
+        self.cell[self.prom & only] = 4
+        zs, xs = np.nonzero(self.prom & only)
         cv.a[s - 1, zs, xs] = I("b:flagstones")
         # railings between parapet posts, lamps every so often
         k = 0
@@ -130,7 +135,7 @@ class Ground:
             if (x + 2 * z) % 23 == 0:
                 cv.a[s + 1, z, x] = I("b:lamp_post"); cv.a[s + 2, z, x] = I("b:lamp_post"); cv.a[s + 3, z, x] = I("b:gas_lamp")
         # benches along the promenade looking over the water
-        near = self.prom & ndimage.binary_dilation(self.wall, iterations=1)
+        near = self.prom & ndimage.binary_dilation(self.wall, iterations=1) & only
         for z, x in zip(*np.nonzero(near)):
             if (x * 3 + z * 5) % 29 == 0:
                 for d, (dx, dz) in (("north", (0, -1)), ("south", (0, 1)), ("west", (-1, 0)), ("east", (1, 0))):
@@ -138,7 +143,7 @@ class Ground:
                         cv.a[s, z, x] = I("b:park_bench", facing=d)
                         break
         # trees along the promenade
-        for z, x in zip(*np.nonzero(self.prom)):
+        for z, x in zip(*np.nonzero(self.prom & only)):
             if (x * 31 + z * 17) % 97 == 0 and self.prom[max(z - 1, 0):z + 2, max(x - 1, 0):x + 2].all():
                 cv.a[s - 1, z, x] = I("grass_block")
                 tree(cv, x, s, z, self.rng, "plane")
@@ -148,13 +153,16 @@ class Ground:
         self.streets.append(st)
         return st
 
-    def paint_streets(self):
+    def paint_streets(self, start=0):
         cv, s = self.cv, self.cv.street
         layers = {"P": 1, "K": 2, "R": 3}
         mats = {1: I("b:flagstones"), 2: I("b:kerbstone"), 3: I("b:tingen_cobbles")}
         # kerbs, then pavements, then roads (so crossings stay clean)
+        only = self.only
         for order in ("K", "P", "R"):
             for sid, st in enumerate(self.streets):
+                if sid < start:
+                    continue
                 for off, ch in enumerate(st.prof):
                     if ch != order:
                         continue
@@ -164,12 +172,12 @@ class Ground:
                         continue
                     run = slice(max(st.a, 0), min(st.b, (W if st.axis == "x" else D) - 1) + 1)
                     zsl, xsl = (c, run) if st.axis == "x" else (run, c)
-                    self.cell[zsl, xsl] = layers[ch]
-                    self.street_id[zsl, xsl] = sid
-        on = self.cell > 0
-        self.free &= ~((self.cell >= 1) & (self.cell <= 3))
-        bridge = (self.water | self.wall) & (self.cell >= 1) & (self.cell <= 3)
-        land = (self.cell >= 1) & (self.cell <= 3) & ~bridge
+                    m = only[zsl, xsl]
+                    self.cell[zsl, xsl] = np.where(m, layers[ch], self.cell[zsl, xsl])
+                    self.street_id[zsl, xsl] = np.where(m, sid, self.street_id[zsl, xsl])
+        self.free &= ~((self.cell >= 1) & (self.cell <= 3) & only)
+        bridge = (self.water | self.wall) & (self.cell >= 1) & (self.cell <= 3) & only
+        land = (self.cell >= 1) & (self.cell <= 3) & ~bridge & only
         for code, mat in mats.items():
             zs, xs = np.nonzero(land & (self.cell == code))
             cv.a[s - 1, zs, xs] = mat
@@ -220,10 +228,10 @@ class Ground:
                         cv.a[s + 1, z, x] = I("b:lamp_post"); cv.a[s + 2, z, x] = I("b:lamp_post")
                         cv.a[s + 3, z, x] = I("b:gas_lamp")
 
-    def street_lamps(self, spacing=12):
+    def street_lamps(self, spacing=12, start=0):
         cv, s = self.cv, self.cv.street
         for sid, st in enumerate(self.streets):
-            if st.kind == "lane":
+            if st.kind == "lane" or sid < start:
                 continue
             # pavement cells next to the kerbs, both sides, staggered
             kerb_offsets = [i for i, ch in enumerate(st.prof) if ch == "K"]
@@ -234,7 +242,7 @@ class Ground:
                     x, z = (t, c) if st.axis == "x" else (c, t)
                     if not (0 <= x < cv.w and 0 <= z < cv.d):
                         continue
-                    if self.street_id[z, x] != sid or self.cell[z, x] != 1:
+                    if self.street_id[z, x] != sid or self.cell[z, x] != 1 or not self.only[z, x]:
                         continue
                     # skip crossings: the cell across the kerb must still be this street's road
                     if cv.a[s, z, x] != 0:
@@ -256,17 +264,17 @@ class Ground:
                             cv.a[s - 1, tz, tx] = I("coarse_dirt")
                             tree(cv, tx, s, tz, self.rng, "avenue")
 
-    def sewers(self):
+    def sewers(self, start=0):
         """Brick sewers under streets marked sewer=True: walkways either side of a channel, manholes."""
         cv, s = self.cv, self.cv.street
         lo, hi = s - 7, s - 3            # floor .. roof
-        for st in self.streets:
-            if not st.sewer:
+        for sid, st in enumerate(self.streets):
+            if not st.sewer or sid < start:
                 continue
             for t in range(st.a, st.b + 1):
                 for o in range(-3, 4):
                     x, z = (t, st.c + o) if st.axis == "x" else (st.c + o, t)
-                    if not (0 <= x < cv.w and 0 <= z < cv.d) or self.water[z, x]:
+                    if not (0 <= x < cv.w and 0 <= z < cv.d) or self.water[z, x] or not self.only[z, x]:
                         continue
                     if self.wall[z, x]:
                         # outfall through the embankment, barred

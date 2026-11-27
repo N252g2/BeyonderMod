@@ -46,11 +46,10 @@ def edge_street(ground, bx0, bz0, bx1, bz1, side):
 
 
 def place_row(ground, cv, rng, side, lo, hi, line, depth, segments):
-    """Stamp a row of buildings. lo..hi is the world span along the edge, line the block edge coordinate.
-    segments: list of (width, make(end) -> Vol) in local (left-to-right seen from the street) order."""
+    """Stamp a row of buildings. lo..hi is the world span along the edge, line the street-side edge of the lots.
+    segments: list of (width, make(end) -> Vol) in local (left-to-right seen from the street) order.
+    A building shallower than the lot keeps its front on the street."""
     placed = []
-    total = sum(w for w, _ in segments)
-    # local order runs: north row west->east, south row east->west, east row north->south, west row south->north
     pos = 0
     for idx, (w, make) in enumerate(segments):
         end = "left" if idx == 0 else ("right" if idx == len(segments) - 1 else None)
@@ -60,22 +59,21 @@ def place_row(ground, cv, rng, side, lo, hi, line, depth, segments):
             continue
         if isinstance(v, tuple):
             v = v[0]
+        dd = min(v.d, depth)
         if side == "north":
             x, z = lo + pos, line
         elif side == "south":
-            x, z = hi - pos - w + 1, line - depth + 1
+            x, z = hi - pos - w + 1, line - dd + 1
         elif side == "east":
-            x, z = line - depth + 1, lo + pos
+            x, z = line - dd + 1, lo + pos
         else:
             x, z = line, hi - pos - w + 1
-        # check the footprint is still free (rivers can bite into blocks)
-        tv = v
-        fw, fd = (w, depth) if side in ("north", "south") else (depth, w)
+        fw, fd = (w, dd) if side in ("north", "south") else (dd, w)
         foot = ground.free[z:z + fd, x:x + fw]
         if foot.shape != (fd, fw) or foot.mean() < 0.999:
             pos += w
             continue
-        cv.stamp(tv, x, z, facing=side)
+        cv.stamp(v, x, z, facing=side)
         # pave the strip in front of the facade so the pavement runs right up to the doors
         st_ = cv.street
         if side == "north":

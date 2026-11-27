@@ -34,12 +34,12 @@ def place_all(g, cv, rng, marks):
 # ---------------------------------------------------------------- finishing
 
 
-def street_signs(g, cv, rng):
-    """Name plates on the corner buildings at every junction, and on posts where there is no wall."""
+def street_signs(g, cv, rng, start=0):
+    """Name plates on the corner buildings at every junction."""
     s = cv.street
     done = set()
     for sid, st in enumerate(g.streets):
-        if st.kind == "lane":
+        if st.kind == "lane" or sid < start:
             continue
         # walk the outer pavement edge on both sides and put a sign where a building corner meets a crossing
         for side in (-1, 1):
@@ -48,7 +48,7 @@ def street_signs(g, cv, rng):
                 x, z = (t, c) if st.axis == "x" else (c, t)
                 if not (1 <= x < cv.w - 1 and 1 <= z < cv.d - 1):
                     continue
-                if not g.built[z, x]:
+                if not g.built[z, x] or not g.only[z, x]:
                     continue
                 # a corner: the previous or next cell along the street is not built (a crossing street)
                 px, pz = (t - 1, c) if st.axis == "x" else (c, t - 1)
