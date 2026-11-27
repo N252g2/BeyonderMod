@@ -5,7 +5,9 @@ import io.github.n252g2.beyonder.core.EquipmentContainer;
 import io.github.n252g2.beyonder.core.EquipmentMenuSlot;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.RecipeBookMenu;
+import net.minecraft.world.item.crafting.CraftingInput;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.Slot;
@@ -21,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  * the game keeps them in sync like any other inventory slot.
  */
 @Mixin(InventoryMenu.class)
-public abstract class InventoryMenuMixin extends AbstractContainerMenu {
+public abstract class InventoryMenuMixin extends RecipeBookMenu<CraftingInput, CraftingRecipe> {
     protected InventoryMenuMixin(MenuType<?> type, int id) {
         super(type, id);
     }
