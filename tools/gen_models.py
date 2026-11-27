@@ -53,14 +53,14 @@ def revolver():
         box("ejector_rod", [7.6, 8.3, 3.0], [8.4, 9.0, 9.0], D),
         box("ejector_head", [7.45, 8.2, 2.7], [8.55, 9.05, 3.3], S),
         # cylinder with its frame window
-        box("cylinder", [6.4, 7.7, 9.0], [9.6, 10.9, 12.2], C, faces={"north": D, "south": D}),
+        box("cylinder", [6.6, 7.8, 9.0], [9.4, 10.8, 12.2], C, faces={"north": D, "south": D}),
         box("frame_top", [7.0, 10.9, 8.6], [9.0, 11.25, 13.2], S),
         # top-break latch: its two brass ears form the rear sight notch
         box("latch_l", [6.8, 10.9, 12.3], [7.65, 11.6, 13.4], B),
         box("latch_r", [8.35, 10.9, 12.3], [9.2, 11.6, 13.4], B),
         # brass bands at both ends of the cylinder
-        box("band_front", [6.3, 7.6, 9.0], [9.7, 11.0, 9.35], B),
-        box("band_back", [6.3, 7.6, 11.85], [9.7, 11.0, 12.2], B),
+        box("band_front", [6.5, 7.7, 9.0], [9.5, 10.9, 9.35], B),
+        box("band_back", [6.5, 7.7, 11.85], [9.5, 10.9, 12.2], B),
         box("barrel_lug", [7.1, 8.1, 7.4], [8.9, 9.1, 9.0], S),
         box("frame_bottom", [7.0, 7.2, 8.6], [9.0, 7.7, 12.6], S),
         box("frame_front", [7.0, 7.2, 8.4], [9.0, 10.9, 9.0], S),
@@ -90,8 +90,8 @@ def revolver():
         if "rotation" in el:
             el["rotation"]["origin"][2] += 0.2
     display = {
-        "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.8, 0.8, 0.8]},
-        "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.8, 0.8, 0.8]},
+        "firstperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6]},
+        "firstperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [0.6, 0.6, 0.6]},
         # two-handed stance: the grip (about 3.5 below and 6 behind the centre) sits in the hand
         "thirdperson_righthand": {"rotation": [0, 0, 0], "translation": [0, 2.2, -3.4], "scale": [0.6, 0.6, 0.6]},
         "thirdperson_lefthand": {"rotation": [0, 0, 0], "translation": [0, 2.2, -3.4], "scale": [0.6, 0.6, 0.6]},

@@ -34,12 +34,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
  */
 public final class GunClient {
     // Display scale of the first-person model (see models/item/revolver.json).
-    private static final float SCALE = 0.8F;
+    private static final float SCALE = 0.6F;
     // Where the gun's centre sits, in view space (x right, y up, -z forward).
-    private static final float HIP_X = 0.36F, HIP_Y = -0.30F, HIP_Z = -0.66F;
+    private static final float HIP_X = 0.34F, HIP_Y = -0.27F, HIP_Z = -0.78F;
     // When aiming, the sight line (model y = 11.25/16) lands exactly on the screen centre.
     private static final float SIGHT = (11.25F / 16.0F - 0.5F) * SCALE;
-    private static final float ADS_X = 0.0F, ADS_Y = -SIGHT, ADS_Z = -0.80F;
+    private static final float ADS_X = 0.0F, ADS_Y = -SIGHT, ADS_Z = -0.78F;
 
     private static float aim, prevAim;
     private static float recoil, prevRecoil;
