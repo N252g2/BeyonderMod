@@ -87,6 +87,15 @@ public class BrewingScreen extends Screen {
         prevBandCenter = bandBase;
     }
 
+    /** Apothecary's Apprentices find the heat band a quarter wider. */
+    private static float bandHalf(Formula formula) {
+        Minecraft mc = Minecraft.getInstance();
+        io.github.n252g2.beyonder.net.CharacterSyncPayload self =
+                mc.player == null ? null : ClientInbox.character(mc.player.getId());
+        boolean apothecary = self != null && "apothecary".equals(self.background());
+        return formula.bandHalfWidth() * (apothecary ? 1.25F : 1.0F);
+    }
+
     /** Opens the minigame when the server says the ingredients are in the flask. */
     static void onClientTick(ClientTickEvent.Post event) {
         BrewStartPayload start = ClientInbox.pollBrew();
@@ -147,7 +156,7 @@ public class BrewingScreen extends Screen {
         // The band wanders a little once ingredients are in.
         float drift = phase == Phase.SETTLE ? 0.0F : 0.035F * Math.min(step, 3) * Mth.sin(ticks * 0.04F);
         bandCenter = Mth.clamp(bandBase + drift, 0.12F, 0.86F);
-        float half = formula.bandHalfWidth();
+        float half = bandHalf(formula);
         float off = Math.abs(heat - bandCenter) - half;
         boolean inBand = off <= 0.0F;
 
@@ -232,7 +241,7 @@ public class BrewingScreen extends Screen {
         }
         float d = Math.abs(marker(0.0F) - zoneCenter);
         float half = formula.zoneWidth() / 2.0F;
-        boolean inBand = Math.abs(heat - bandCenter) <= formula.bandHalfWidth();
+        boolean inBand = Math.abs(heat - bandCenter) <= bandHalf(formula);
         int gained;
         if (d <= half * 0.35F) {
             gained = 2;
@@ -505,7 +514,7 @@ public class BrewingScreen extends Screen {
         g.drawCenteredString(font, "Heat", x + 5, y - 11, MUTED);
         g.fill(x - 1, y - 1, x + 11, y + height + 1, BRASS);
         g.fill(x, y, x + 10, y + height, 0xFF0E0C12);
-        float half = formula.bandHalfWidth();
+        float half = bandHalf(formula);
         int bandTop = y + height - Math.round(height * Math.min(1.0F, band + half));
         int bandBottom = y + height - Math.round(height * Math.max(0.0F, band - half));
         g.fill(x, bandTop, x + 10, bandBottom, 0x60D8B25A);

@@ -22,6 +22,14 @@ public final class BeyonderNetwork {
                 (payload, context) -> ClientInbox.accept(payload));
         registrar.playToClient(PotionVisionPayload.TYPE, PotionVisionPayload.STREAM_CODEC,
                 (payload, context) -> ClientInbox.accept(payload));
+        registrar.playToClient(CharacterSyncPayload.TYPE, CharacterSyncPayload.STREAM_CODEC,
+                (payload, context) -> ClientInbox.accept(payload));
+        registrar.playToServer(CreateCharacterPayload.TYPE, CreateCharacterPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player) {
+                        io.github.n252g2.beyonder.core.Characters.create(player, payload);
+                    }
+                }));
         registrar.playToClient(BrewStartPayload.TYPE, BrewStartPayload.STREAM_CODEC,
                 (payload, context) -> ClientInbox.accept(payload));
         registrar.playToServer(BrewResultPayload.TYPE, BrewResultPayload.STREAM_CODEC,

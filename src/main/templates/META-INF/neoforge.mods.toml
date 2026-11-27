@@ -14,6 +14,9 @@ Beyonder: a Lord of the Mysteries inspired MMORPG for Minecraft.
 Tingen at night: gaslight, fog, a red moon and Spirit Vision.
 '''
 
+[[mixins]]
+config="beyonder.mixins.json"
+
 [[dependencies.${mod_id}]]
     modId="neoforge"
     type="required"

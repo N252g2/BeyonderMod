@@ -45,6 +45,8 @@ public class BeyonderClient {
         NeoForge.EVENT_BUS.addListener(SpiritMarkers::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(GunClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(BrewingScreen::onClientTick);
+        NeoForge.EVENT_BUS.addListener(CharacterCreatorScreen::onClientTick);
+        NeoForge.EVENT_BUS.addListener(NameTags::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(GunClient::onInteraction);
         NeoForge.EVENT_BUS.addListener(GunClient::onComputeFov);
         NeoForge.EVENT_BUS.addListener(GunClient::onRenderLayer);
@@ -75,5 +77,7 @@ public class BeyonderClient {
     private static void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
         // Shaders are resources: rebuild the post chain after F3+T or a resource pack change.
         event.registerReloadListener((ResourceManagerReloadListener) resourceManager -> GradingRenderer.reset());
+        // Character skins are built from resource parts: rebuild them too.
+        event.registerReloadListener((ResourceManagerReloadListener) resourceManager -> CharacterSkins.reset());
     }
 }

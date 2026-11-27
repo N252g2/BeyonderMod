@@ -52,6 +52,15 @@ public final class BeyonderCommands {
                         .then(Commands.argument("players", EntityArgument.players())
                                 .then(Commands.argument("amount", FloatArgumentType.floatArg(0))
                                         .executes(ctx -> each(ctx, p -> Beyonders.get(p).setSpirituality(FloatArgumentType.getFloat(ctx, "amount")))))))
+                .then(Commands.literal("character").requires(s -> s.hasPermission(2))
+                        .then(Commands.literal("reset").then(Commands.argument("player", EntityArgument.player())
+                                .executes(ctx -> {
+                                    ServerPlayer target = EntityArgument.getPlayer(ctx, "player");
+                                    io.github.n252g2.beyonder.core.Characters.reset(target);
+                                    ctx.getSource().sendSuccess(() -> Component.literal(target.getGameProfile().getName()
+                                            + " will make their character again."), true);
+                                    return 1;
+                                }))))
                 .then(Commands.literal("calm").requires(s -> s.hasPermission(2))
                         .then(Commands.argument("players", EntityArgument.players())
                                 .executes(ctx -> each(ctx, p -> Beyonders.get(p).setLossOfControl(0.0F))))));

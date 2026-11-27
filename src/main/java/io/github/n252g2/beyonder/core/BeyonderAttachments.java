@@ -18,6 +18,13 @@ public final class BeyonderAttachments {
                     .copyOnDeath()
                     .build());
 
+    /** The player's character: name, background and appearance. Survives death. */
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<CharacterData>> CHARACTER =
+            TYPES.register("character", () -> AttachmentType.builder(CharacterData::new)
+                    .serialize(CharacterData.CODEC)
+                    .copyOnDeath()
+                    .build());
+
     private BeyonderAttachments() {}
 
     public static void register(IEventBus modBus) {

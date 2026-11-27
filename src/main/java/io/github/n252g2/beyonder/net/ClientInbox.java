@@ -14,6 +14,8 @@ public final class ClientInbox {
     private static final Queue<SpiritMarkerPayload> MARKERS = new ConcurrentLinkedQueue<>();
     private static final Queue<PotionVisionPayload> VISIONS = new ConcurrentLinkedQueue<>();
     private static final Queue<BrewStartPayload> BREWS = new ConcurrentLinkedQueue<>();
+    private static final Map<Integer, CharacterSyncPayload> CHARACTERS = new ConcurrentHashMap<>();
+    private static volatile int characterVersion;
 
     private ClientInbox() {}
 
@@ -27,6 +29,21 @@ public final class ClientInbox {
 
     public static void accept(PotionVisionPayload payload) {
         VISIONS.add(payload);
+    }
+
+    public static void accept(CharacterSyncPayload payload) {
+        CHARACTERS.put(payload.entityId(), payload);
+        characterVersion++;
+    }
+
+    /** A player's character as last told by the server, or null if unknown. */
+    public static CharacterSyncPayload character(int entityId) {
+        return CHARACTERS.get(entityId);
+    }
+
+    /** Goes up whenever any character changes (the skin cache watches it). */
+    public static int characterVersion() {
+        return characterVersion;
     }
 
     public static void accept(BrewStartPayload payload) {
@@ -55,5 +72,7 @@ public final class ClientInbox {
         MARKERS.clear();
         VISIONS.clear();
         BREWS.clear();
+        CHARACTERS.clear();
+        characterVersion++;
     }
 }
