@@ -23,6 +23,24 @@ def _kind(i):
     return "solid"
 
 
+def _reach(k, y, z0, x0, block, want, radius):
+    """How many open cells at height y can be reached from (z0, x0) without passing ``block`` (capped)."""
+    seen = {(z0, x0), block}
+    todo = [(z0, x0)]
+    n = 0
+    while todo and n < want:
+        z, x = todo.pop()
+        if k(y, z, x) != "open":
+            continue
+        n += 1
+        for dz, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            c = (z + dz, x + dx)
+            if c not in seen and abs(c[0] - z0) <= radius and abs(c[1] - x0) <= radius:
+                seen.add(c)
+                todo.append(c)
+    return n
+
+
 def doors(cv):
     """Every door must open onto somewhere you can stand on both sides. Doors that open into a wall, onto a drop
     or into a cupboard are bricked up; doors a block above the yard get a step."""
@@ -30,7 +48,7 @@ def doors(cv):
     lower = [i for i, st in enumerate(P.states) if st.split("[")[0].endswith("_door") and "half=lower" in st]
     kind = {}
     ys, zs, xs = np.nonzero(np.isin(a, lower))
-    removed = steps = 0
+    removed = steps = pockets = 0
     H, D, W = a.shape
 
     def k(y, z, x):
@@ -62,7 +80,12 @@ def doors(cv):
                     ok = False
                     break
         if ok:
-            continue
+            # both sides must lead somewhere: a room on one side, and no dead-end pocket on either
+            ra = _reach(k, y + 1, z + dz, x + dx, (z, x), 18, 10)
+            rb = _reach(k, y + 1, z - dz, x - dx, (z, x), 18, 10)
+            if min(ra, rb) >= 6 and max(ra, rb) >= 18:
+                continue
+            pockets += 1
         # brick it up with whatever the wall beside it is made of
         fill = None
         for ox, oz in ((dz, dx), (-dz, -dx)):
@@ -76,6 +99,7 @@ def doors(cv):
         a[y, z, x] = fill or I("b:stock_bricks")
         a[y + 1, z, x] = fill or I("b:stock_bricks")
         removed += 1
+    print(f"  ({pockets} of them led into dead-end pockets)")
     return removed, steps
 
 
