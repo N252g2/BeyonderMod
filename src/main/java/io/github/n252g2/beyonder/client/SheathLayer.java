@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
@@ -76,39 +77,75 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
     }
 
-    /**
-     * Belt slot positions round the waist: the front-right and front-left corners and the small of the back,
-     * each turned to lie flat against the body there. {x, z, turn about the vertical in degrees}
-     */
-    private static final float[][] BELT_SPOTS = {{-0.255F, -0.150F, 42.0F}, {0.255F, -0.150F, -42.0F}, {0.0F, 0.172F, 180.0F}};
     /** The belt line: a little above the bottom of the torso, so things sit on the waist, not over the thighs. */
     private static final float BELT_Y = 0.655F;
+    private static final float BELT_SCALE = 0.21F;
+    /**
+     * Where the belt items sit along the front of the waist, by how many are worn: -1 is the front-right
+     * corner, 0 the middle of the front, +1 the front-left corner. They fill from the right hand round.
+     */
+    private static final float[][] BELT_ARC = {{-1.0F}, {-1.0F, 1.0F}, {-1.0F, 0.0F, 1.0F}};
 
-    /** What hangs from the belt, small: potions, food, whatever the belt slots hold. */
+    /**
+     * What hangs from the belt: potions, food, whatever the belt slots hold. Everything sits on the belt
+     * line in an arc round the front of the waist, lying flat against the body: the corner ones turned
+     * 45 degrees so they wrap round onto the hips, the middle one flat on the front.
+     */
     private void belt(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player) {
-        for (int i = 0; i < Equipment.Slot.BELTS.length; i++) {
-            ItemStack stack;
-            if (player.isLocalPlayer()) {
-                stack = Equipment.item(player, Equipment.Slot.BELTS[i]);
-            } else {
-                EquipStatePayload s = ClientInbox.equipment(player.getId());
-                stack = s == null ? ItemStack.EMPTY : s.item(EquipStatePayload.BELT + i);
+        ItemStack[] worn = new ItemStack[Equipment.Slot.BELTS.length];
+        int n = 0;
+        EquipStatePayload s = player.isLocalPlayer() ? null : ClientInbox.equipment(player.getId());
+        for (int i = 0; i < worn.length; i++) {
+            ItemStack stack = player.isLocalPlayer() ? Equipment.item(player, Equipment.Slot.BELTS[i])
+                    : s == null ? ItemStack.EMPTY : s.item(EquipStatePayload.BELT + i);
+            if (!stack.isEmpty()) {
+                worn[n++] = stack;
             }
-            if (stack.isEmpty()) {
-                continue;
-            }
-            float[] spot = BELT_SPOTS[i];
+        }
+        if (n == 0) {
+            return;
+        }
+        // the outside of whatever the waist is wearing, plus a hair, so nothing sinks into a coat or a chestplate
+        float d = waistInflation(player);
+        float hw = (4.0F + d) / 16.0F + 0.012F;
+        float hd = (2.0F + d) / 16.0F + 0.012F;
+        float[] arc = BELT_ARC[n - 1];
+        for (int i = 0; i < n; i++) {
+            float a = arc[i];
             pose.pushPose();
             getParentModel().body.translateAndRotate(pose);
-            pose.translate(spot[0], BELT_Y, spot[1]);
-            // turn to follow the curve of the waist, then flip upright (model space is upside down)
-            pose.mulPose(Axis.YP.rotationDegrees(spot[2]));
-            pose.mulPose(Axis.ZP.rotationDegrees(180.0F));
-            pose.scale(0.22F, 0.22F, 0.22F);
-            Minecraft.getInstance().getItemRenderer().renderStatic(player, stack, ItemDisplayContext.NONE, false, pose, buffers,
+            if (a == 0.0F) {
+                pose.translate(0.0F, BELT_Y, -hd);
+            } else {
+                // a plane through the corner at 45 degrees stays outside both faces; slide it a little to the front
+                pose.translate(a * (hw - 0.02F), BELT_Y, -hd - 0.02F);
+                pose.mulPose(Axis.YP.rotationDegrees(-a * 45.0F));
+            }
+            pose.mulPose(Axis.ZP.rotationDegrees(180.0F)); // item models come out upside down in body space
+            pose.scale(BELT_SCALE, BELT_SCALE, BELT_SCALE);
+            Minecraft.getInstance().getItemRenderer().renderStatic(player, worn[i], ItemDisplayContext.NONE, false, pose, buffers,
                     player.level(), light, OverlayTexture.NO_OVERLAY, player.getId() + 10 + i);
             pose.popPose();
         }
+    }
+
+    /** How far the outermost thing worn on the waist stands off the skin, in model pixels. */
+    private static float waistInflation(AbstractClientPlayer player) {
+        float d = 0.0F;
+        if (!EquipmentClient.clothesOverArmour(player)) {
+            if (!player.getItemBySlot(EquipmentSlot.CHEST).isEmpty()) {
+                d = 1.0F;
+            } else if (!player.getItemBySlot(EquipmentSlot.LEGS).isEmpty()) {
+                d = 0.5F;
+            }
+        }
+        if (ClothingLayer.visible(player, Equipment.Slot.COAT) != null) {
+            d = Math.max(d, 0.46F);
+        }
+        if (ClothingLayer.visible(player, Equipment.Slot.SHIRT) != null || ClothingLayer.visible(player, Equipment.Slot.TROUSERS) != null) {
+            d = Math.max(d, 0.3F);
+        }
+        return d;
     }
 
     private static Mount preferred(Kind kind) {
