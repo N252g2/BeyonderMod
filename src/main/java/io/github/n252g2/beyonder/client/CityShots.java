@@ -49,7 +49,7 @@ final class CityShots {
             new View("20g_nighthawks", "nighthawks", 0, 0.2, 0, 90, 0, 6000),
             new View("20h_house_inside", "house_inside", 0, 0, 0, 180, 15, 6000),
             new View("20i_house_upstairs", "house_upstairs", 0, 0, 0, 180, 15, 6000),
-            new View("20j_yards", "yard", 0, 4, 0, 0, 25, 6000),
+            new View("20j_yards", "yard", 0, 22, -6, 0, 50, 6000),
             new View("20_night_street", "daffodil", 0, 1.6, 0, -90, 2, 18000),
             new View("21_night_plaza", "cathedral", 9, 3, 26, 160, -10, 18000),
             new View("22_sewer", "sewer", 0, 0.1, 0, 90, 0, 6000),
