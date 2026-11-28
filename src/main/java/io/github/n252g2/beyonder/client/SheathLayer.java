@@ -79,17 +79,25 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
 
     /** The belt line: a little above the bottom of the torso, so things sit on the waist, not over the thighs. */
     private static final float BELT_Y = 0.655F;
-    private static final float BELT_SCALE = 0.21F;
+    private static final float BELT_SCALE = 0.18F;
+    /** Which corner of the waist the belt items bunch on: +1 the player's left (clear of the holster), -1 the right. */
+    private static final float BELT_SIDE = 1.0F;
+    /** How far round the corner they face: 0 would be straight ahead, 90 straight out to the side. */
+    private static final float BELT_TURN = 35.0F;
     /**
-     * Where the belt items sit along the front of the waist, by how many are worn: -1 is the front-right
-     * corner, 0 the middle of the front, +1 the front-left corner. They fill from the right hand round.
+     * The bunch, by how many are worn: {along the corner (+ = round toward the hip), up or down from the belt
+     * line, how far it stands forward of the others}. Two sit side by side on the belt, a third tucks in
+     * between them just above, in front, so they read as one cramped cluster.
      */
-    private static final float[][] BELT_ARC = {{-1.0F}, {-1.0F, 1.0F}, {-1.0F, 0.0F, 1.0F}};
+    private static final float[][][] BELT_BUNCH = {
+            {{0.0F, 0.0F, 0.0F}},
+            {{-0.04F, 0.0F, 0.0F}, {0.04F, 0.0F, 0.008F}},
+            {{-0.045F, 0.035F, 0.0F}, {0.045F, 0.035F, 0.008F}, {0.0F, -0.045F, 0.016F}}};
 
     /**
-     * What hangs from the belt: potions, food, whatever the belt slots hold. Everything sits on the belt
-     * line in an arc round the front of the waist, lying flat against the body: the corner ones turned
-     * 45 degrees so they wrap round onto the hips, the middle one flat on the front.
+     * What hangs from the belt: potions, food, whatever the belt slots hold. All of it is bunched together
+     * on the front corner of the waist, turned to face round the corner, nothing on the front of the body.
+     * The bunch stands just forward of the arm that hangs beside the waist, so the arm doesn't swallow it.
      */
     private void belt(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player) {
         ItemStack[] worn = new ItemStack[Equipment.Slot.BELTS.length];
@@ -105,23 +113,23 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         if (n == 0) {
             return;
         }
-        // the outside of whatever the waist is wearing, plus a hair, so nothing sinks into a coat or a chestplate
+        // the outside of whatever the waist is wearing, so nothing sinks into a coat or a chestplate
         float d = waistInflation(player);
-        float hw = (4.0F + d) / 16.0F + 0.012F;
-        float hd = (2.0F + d) / 16.0F + 0.012F;
-        float[] arc = BELT_ARC[n - 1];
+        float hw = (4.0F + d) / 16.0F;
+        float hd = (2.0F + d) / 16.0F;
+        double turn = Math.toRadians(BELT_TURN);
+        // along the corner (toward the hip and back) and out from it (forward and to the side)
+        float tx = (float) Math.cos(turn) * BELT_SIDE, tz = (float) Math.sin(turn);
+        float nx = (float) Math.sin(turn) * BELT_SIDE, nz = -(float) Math.cos(turn);
+        // the middle of the bunch: on the corner, a little in from it and stood forward of the arm's front
+        float cx = BELT_SIDE * (hw - 0.035F), cz = -hd - 0.05F;
+        float[][] bunch = BELT_BUNCH[n - 1];
         for (int i = 0; i < n; i++) {
-            float a = arc[i];
+            float[] b = bunch[i];
             pose.pushPose();
             getParentModel().body.translateAndRotate(pose);
-            if (a == 0.0F) {
-                pose.translate(0.0F, BELT_Y, -hd);
-            } else {
-                // a plane through the corner at 45 degrees stays outside both faces; slide along it toward the front,
-                // clear of the arms hanging at the sides
-                pose.translate(a * (hw - 0.035F), BELT_Y, -hd - 0.035F);
-                pose.mulPose(Axis.YP.rotationDegrees(-a * 45.0F));
-            }
+            pose.translate(cx + b[0] * tx + b[2] * nx, BELT_Y + b[1], cz + b[0] * tz + b[2] * nz);
+            pose.mulPose(Axis.YP.rotationDegrees(-BELT_SIDE * BELT_TURN));
             pose.mulPose(Axis.ZP.rotationDegrees(180.0F)); // item models come out upside down in body space
             pose.scale(BELT_SCALE, BELT_SCALE, BELT_SCALE);
             Minecraft.getInstance().getItemRenderer().renderStatic(player, worn[i], ItemDisplayContext.NONE, false, pose, buffers,
