@@ -79,11 +79,11 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
 
     /** The belt line: a little above the bottom of the torso, so things sit on the waist, not over the thighs. */
     private static final float BELT_Y = 0.655F;
-    private static final float BELT_SCALE = 0.18F;
+    private static final float BELT_SCALE = 0.19F;
     /** Which corner of the waist the belt items bunch on: +1 the player's left (clear of the holster), -1 the right. */
     private static final float BELT_SIDE = 1.0F;
     /** How far round the corner they face: 0 would be straight ahead, 90 straight out to the side. */
-    private static final float BELT_TURN = 35.0F;
+    private static final float BELT_TURN = 30.0F;
     /**
      * The bunch, by how many are worn: {along the corner (+ = round toward the hip), up or down from the belt
      * line, how far it stands forward of the others}. Two sit side by side on the belt, a third tucks in
@@ -121,8 +121,8 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         // along the corner (toward the hip and back) and out from it (forward and to the side)
         float tx = (float) Math.cos(turn) * BELT_SIDE, tz = (float) Math.sin(turn);
         float nx = (float) Math.sin(turn) * BELT_SIDE, nz = -(float) Math.cos(turn);
-        // the middle of the bunch: on the corner, a little in from it and stood forward of the arm's front
-        float cx = BELT_SIDE * (hw - 0.035F), cz = -hd - 0.05F;
+        // the middle of the bunch: on the corner, just in from the arm hanging beside it, and stood a hair forward
+        float cx = BELT_SIDE * (hw - 0.06F), cz = -hd - 0.03F;
         float[][] bunch = BELT_BUNCH[n - 1];
         for (int i = 0; i < n; i++) {
             float[] b = bunch[i];
