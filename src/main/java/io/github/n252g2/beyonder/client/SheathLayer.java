@@ -76,8 +76,13 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
         }
     }
 
-    /** Belt slot positions: front right, front left, and the small of the back. {x, z, facing back?} */
-    private static final float[][] BELT_SPOTS = {{-0.15F, -0.175F, 0.0F}, {0.15F, -0.175F, 0.0F}, {0.0F, 0.175F, 1.0F}};
+    /**
+     * Belt slot positions round the waist: the front-right and front-left corners and the small of the back,
+     * each turned to lie flat against the body there. {x, z, turn about the vertical in degrees}
+     */
+    private static final float[][] BELT_SPOTS = {{-0.255F, -0.150F, 42.0F}, {0.255F, -0.150F, -42.0F}, {0.0F, 0.172F, 180.0F}};
+    /** The belt line: a little above the bottom of the torso, so things sit on the waist, not over the thighs. */
+    private static final float BELT_Y = 0.655F;
 
     /** What hangs from the belt, small: potions, food, whatever the belt slots hold. */
     private void belt(PoseStack pose, MultiBufferSource buffers, int light, AbstractClientPlayer player) {
@@ -95,13 +100,11 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             float[] spot = BELT_SPOTS[i];
             pose.pushPose();
             getParentModel().body.translateAndRotate(pose);
-            pose.translate(spot[0], 0.76F, spot[1]);
-            pose.mulPose(Axis.ZP.rotationDegrees(180.0F)); // model space is upside down; items hang upright
-            if (spot[2] > 0.0F) {
-                pose.mulPose(Axis.YP.rotationDegrees(180.0F));
-            }
-            pose.mulPose(Axis.ZP.rotationDegrees(i == 0 ? 8.0F : -8.0F));
-            pose.scale(0.26F, 0.26F, 0.26F);
+            pose.translate(spot[0], BELT_Y, spot[1]);
+            // turn to follow the curve of the waist, then flip upright (model space is upside down)
+            pose.mulPose(Axis.YP.rotationDegrees(spot[2]));
+            pose.mulPose(Axis.ZP.rotationDegrees(180.0F));
+            pose.scale(0.22F, 0.22F, 0.22F);
             Minecraft.getInstance().getItemRenderer().renderStatic(player, stack, ItemDisplayContext.NONE, false, pose, buffers,
                     player.level(), light, OverlayTexture.NO_OVERLAY, player.getId() + 10 + i);
             pose.popPose();
