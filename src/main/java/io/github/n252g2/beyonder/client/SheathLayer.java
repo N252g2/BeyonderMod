@@ -117,8 +117,9 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             if (a == 0.0F) {
                 pose.translate(0.0F, BELT_Y, -hd);
             } else {
-                // a plane through the corner at 45 degrees stays outside both faces; slide it a little to the front
-                pose.translate(a * (hw - 0.02F), BELT_Y, -hd - 0.02F);
+                // a plane through the corner at 45 degrees stays outside both faces; slide along it toward the front,
+                // clear of the arms hanging at the sides
+                pose.translate(a * (hw - 0.035F), BELT_Y, -hd - 0.035F);
                 pose.mulPose(Axis.YP.rotationDegrees(-a * 45.0F));
             }
             pose.mulPose(Axis.ZP.rotationDegrees(180.0F)); // item models come out upside down in body space
