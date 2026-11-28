@@ -245,17 +245,14 @@ def yards(ground, cv, rng, rect, placed, kind):
         for xx in range(bx0, bx1 + 1):
             if ground.yard[mid, xx]:
                 cv.a[s, mid, xx] = wallb
-        # privies and sheds against the mid wall
+        # a water butt or a coal bin against the mid wall now and then
         for x, z, fw, fd, side in placed:
-            if side not in ("north", "south") or rng.random() < 0.4:
+            if side not in ("north", "south") or rng.random() < 0.6:
                 continue
             sz = mid - 1 if side == "north" else mid + 1
             sx = x + 1 + rng.randint(0, max(0, fw - 3))
-            if all(ground.yard[sz, xx] for xx in (sx, sx + 1) if xx <= bx1):
-                cv.a[s:s + 2, sz, sx:sx + 2] = I("b:weathered_planks")
-                cv.a[s + 2, sz, sx:sx + 2] = I("b:weathered_plank_slab", type="bottom")
-                cv.a[s, sz, sx] = I("spruce_door", facing="north" if side == "north" else "south", half="lower")
-                cv.a[s + 1, sz, sx] = I("spruce_door", facing="north" if side == "north" else "south", half="upper")
+            if bx0 <= sx <= bx1 and ground.yard[sz, sx] and cv.a[s, sz, sx] == 0:
+                cv.a[s, sz, sx] = I(rng.choice(("barrel", "cauldron", "composter")))
     if kind in ("yards", "garden"):
         from terrain import tree
         n = len(zs) // (60 if kind == "yards" else 30)

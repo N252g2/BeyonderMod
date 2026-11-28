@@ -297,6 +297,19 @@ def main():
     if "--small" not in sys.argv:
         import ring
         cv, g, marks = ring.wrap(cv, g, marks, rng, PROFILES)
+    import fixups
+    removed, steps = fixups.doors(cv)
+    print(f"doors: {removed} bricked up, {steps} given a step")
+    # places to look inside, for the CI tour: a Daffodil Street house and the yards behind it
+    off = (cv.w - W) // 2
+    inside = fixups.find_door(cv, off + 60, off + 252, "south", 30)
+    if inside:
+        (x, y, z), yaw = inside
+        marks["house_inside"] = (x, y, z, yaw)
+        marks["house_upstairs"] = (x, y + 4, z, yaw)
+    yz, yx = np.nonzero(g.yard[off + 255:off + 285, off + 50:off + 100])
+    if len(yz):
+        marks["yard"] = (off + 50 + int(yx[len(yx) // 2]), STREET, off + 255 + int(yz[len(yz) // 2]), 0)
     print(f"generated {cv.w}x{cv.d} in {time.time() - t0:.1f}s, palette {len(P.states)}")
     bad = export.check_palette()
     if bad:

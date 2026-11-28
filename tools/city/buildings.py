@@ -5,6 +5,7 @@ y=0 is the pavement's air layer; ground floors are raised one step (floor block 
 from world import S, I, AIR, Vol, KEEP
 from parts import *  # noqa: F401,F403
 import parts as pt
+import interiors as IN
 
 SHOP_NAMES = [
     "Hale & Sons, Tailors", "Brindle's Bakery", "Ashworth Apothecary", "The Lamplighter's Supply",
@@ -82,7 +83,15 @@ def back_wall(v, w, d, storeys, st, rng):
         y = 4 * k + 1
         for x in range(2, w - 2, 2):
             pt.window(v, x, y, d - 1, rng, st.lit * 0.6)
-    pt.door(v, w - 2, 1, d - 1, st.wood, "south")
+
+
+def front_door(v, xd, st, wood, hinge="left", hood=True):
+    """A door flush in the facade, a step up to it, a fanlight over it and a little hood above that."""
+    pt.door(v, xd, 1, 1, wood, "north", hinge)
+    v.set(xd, 0, 0, st.trim.stairs("south"))
+    v.set(xd, 3, 1, S("glass_pane"))
+    if hood:
+        v.set(xd, 4, 0, st.trim.stairs("south", "top"))
 
 
 def roof_and_chimneys(v, w, d, top, st, rng, chimney_left=True, chimney_right=False, dormers=0):
@@ -119,12 +128,7 @@ def terrace_house(rng, w, d, st, storeys=3, oriel=False, door_left=True, end=Non
     v = Vol(w, h, d)
     top = body(v, w, d, storeys, st, rng)
     xd = 1 if door_left else w - 2
-    # recessed door with a step and a fanlight
-    v.fill(xd, 1, 1, xd, 2, 1, AIR)
-    v.set(xd, 0, 0, st.trim.stairs("south"))
-    pt.door(v, xd, 1, 2, st.wood, "north", "left" if door_left else "right")
-    v.set(xd, 3, 2, S("glass_pane"))
-    v.set(xd, 3, 1, st.trim.block)
+    front_door(v, xd, st, st.wood, "left" if door_left else "right")
     win_xs = [x for x in range(1, w - 1) if x != xd]
     # ground floor: a paired window away from the door, or a canted bay under its own little roof
     if bay and w >= 6:
@@ -159,7 +163,7 @@ def terrace_house(rng, w, d, st, storeys=3, oriel=False, door_left=True, end=Non
         end_windows(v, w, d, storeys, st, rng, end)
     if lamp:
         v.set(xd + (1 if door_left else -1), 3, 0, pt.LAMP)
-    interior(v, w, d, storeys, st, rng)
+    IN.house(v, w, d, storeys, st.wood if st.wood != "mangrove" else "spruce", rng, xd)
     roof_and_chimneys(v, w, d, top, st, rng, True, end == "right", 1 if dormer else 0)
     return v
 
@@ -176,10 +180,7 @@ def shop_house(rng, w, d, st, storeys=3, name=None, awning=None, end=None):
     v.fill(0, 0, 1, 0, 4, 1, st.trim.block); v.fill(w - 1, 0, 1, w - 1, 4, 1, st.trim.block)
     v.fill(1, 4, 1, w - 2, 4, 1, S("b:dark_timber", axis="x"))
     v.fill(1, 0, 1, w - 2, 0, 1, st.trim.block)
-    v.fill(xd, 1, 1, xd, 3, 1, AIR)
-    v.set(xd, 0, 0, st.trim.stairs("south"))
-    pt.door(v, xd, 1, 2, wood, "north")
-    v.set(xd, 3, 2, S("glass_pane"))
+    front_door(v, xd, st, wood, hood=False)
     # fascia sign and awning
     name = name or rng.choice(SHOP_NAMES)
     words = name.split(" ")
@@ -204,7 +205,7 @@ def shop_house(rng, w, d, st, storeys=3, name=None, awning=None, end=None):
     back_wall(v, w, d, storeys, st, rng)
     if end:
         end_windows(v, w, d, storeys, st, rng, end)
-    interior(v, w, d, storeys, st, rng, "shop")
+    IN.house(v, w, d, storeys, wood if wood != "mangrove" else "spruce", rng, xd, back_door=False, kind="shop")
     roof_and_chimneys(v, w, d, top, st, rng, True, end == "right", 0)
     return v
 
@@ -221,9 +222,8 @@ def pub(rng, w, d, st, storeys=3, name=None, end=None):
             v.set(x, 1, 1, S("green_terracotta"))
     v.fill(1, 4, 1, w - 2, 4, 1, S("black_terracotta"))
     xd = w // 2
-    v.fill(xd, 1, 1, xd, 3, 1, AIR)
-    pt.door(v, xd, 1, 2, "dark_oak", "north")
-    v.set(xd, 3, 2, S("glass_pane"))
+    pt.door(v, xd, 1, 1, "dark_oak", "north")
+    v.set(xd, 3, 1, S("glass_pane"))
     v.set(xd, 0, 0, S("b:ashlar_stairs", facing="south", half="bottom"))
     name = name or rng.choice(PUB_NAMES)
     words = name.split(" ")
@@ -240,7 +240,7 @@ def pub(rng, w, d, st, storeys=3, name=None, end=None):
     back_wall(v, w, d, storeys, st, rng)
     if end:
         end_windows(v, w, d, storeys, st, rng, end)
-    interior(v, w, d, storeys, st, rng, "pub")
+    IN.house(v, w, d, storeys, "dark_oak", rng, xd, back_door=False, kind="pub")
     roof_and_chimneys(v, w, d, top, st, rng, True, True, 0)
     return v
 
@@ -251,8 +251,6 @@ def tenement(rng, w, d, st, storeys=5, end=None):
     v = Vol(w, h, d)
     top = body(v, w, d, storeys, st, rng)
     xd = w // 2
-    v.fill(xd, 1, 1, xd, 2, 1, AIR)
-    pt.door(v, xd, 1, 2, "spruce", "north")
     v.set(xd, 0, 0, st.trim.stairs("south"))
     v.set(xd, 3, 1, st.trim.block)
     for k in range(storeys):
@@ -275,15 +273,11 @@ def tenement(rng, w, d, st, storeys=5, end=None):
     for k in range(storeys):
         for x in range(2, w - 2, 3):
             v.fill(x, 4 * k + 1, d - 1, x, 4 * k + 2, d - 1, pt.LIT if rng.random() < st.lit * 0.6 else pt.WINDOW)
-    pt.door(v, w // 2, 1, d - 1, "spruce", "south")
     if end:
         end_windows(v, w, d, storeys, st, rng, end)
-    # stairs up the middle and a few rooms
-    for k in range(storeys - 1):
-        pt.stair_run(v, 1 + (k % 2) * (w - 3), 2, 4 * k + 1, 4, "spruce")
-    for k in range(storeys):
-        pt.furnish(v, 2, w - 3, 3, d - 2, 4 * k + 1, rng, "home")
-        pt.ceiling_lamp(v, w // 2, 4 * k + 3, d // 2)
+    # windows must not sit where the passage meets the back wall
+    v.fill(xd, 1, d - 1, xd, 2, d - 1, st.wall.block)
+    IN.corridor_block(v, w, d, storeys, "spruce", rng, "home")
     return v
 
 
@@ -314,7 +308,7 @@ def shack(rng, w, d, st=None):
         x = rng.randint(1, w - 2)
         v.fill(x, 5, d - 2, x, 7, d - 2, S("cobblestone_wall"))
         v.set(x, 8, d - 2, S("b:chimney"))
-    pt.furnish(v, 1, w - 2, 2, d - 2, 1, rng, "store")
+    IN.one_room(v, 1, w - 2, 2, d - 2, 1, rng, "store", "spruce", xd)
     return v
 
 
@@ -333,9 +327,8 @@ def townhouse(rng, w, d, st, storeys=4, end=None):
     v.fill(xd - 1, 1, 0, xd - 1, 3, 0, S("b:ashlar_pillar", axis="y"))
     v.fill(xd + 1, 1, 0, xd + 1, 3, 0, S("b:ashlar_pillar", axis="y"))
     v.fill(xd - 1, 4, 0, xd + 1, 4, 0, S("b:ashlar_slab", type="bottom"))
-    v.fill(xd, 1, 1, xd, 3, 1, AIR)
-    pt.door(v, xd, 1, 2, "dark_oak", "north")
-    v.set(xd, 3, 2, S("glass_pane"))
+    pt.door(v, xd, 1, 1, "dark_oak", "north")
+    v.set(xd, 3, 1, S("glass_pane"))
     for x in range(1, w - 1):
         if abs(x - xd) > 1:
             pt.window(v, x, 1, 1, rng, st.lit)
@@ -354,7 +347,7 @@ def townhouse(rng, w, d, st, storeys=4, end=None):
     back_wall(v, w, d, storeys, st, rng)
     if end:
         end_windows(v, w, d, storeys, st, rng, end)
-    interior(v, w, d, storeys, st, rng, "office" if rng.random() < 0.3 else "home")
+    IN.house(v, w, d, storeys, "dark_oak", rng, xd, kind="office" if rng.random() < 0.3 else "home")
     pt.mansard(v, 0, w - 1, 1, d - 1, top, st.roof, 3, rng, [x for x in range(1, w - 1, 2)], st.lit)
     pt.chimney_stack(v, 0, d // 2, top, top + 6, st.wall if st.wall is not pt.PLASTER else pt.STOCK, rng.random() < 0.5, 1)
     return v
@@ -394,9 +387,7 @@ def villa(rng, w, d, st, storeys=2):
         for x in (0, hw - 1):
             hb.set(x, y, 1, st.trim.block); hb.set(x, y, hd, st.trim.block)
     xd = hw // 2
-    hb.fill(xd, 1, 1, xd, 2, 1, AIR)
-    pt.door(hb, xd, 1, 2, "dark_oak", "north")
-    hb.set(xd, 3, 2, S("glass_pane"))
+    hb.set(xd, 3, 1, S("glass_pane"))
     for bx in (2, hw - 3):
         if abs(bx - xd) >= 2:
             hb.fill(bx - 1, 0, 0, bx + 1, 0, 0, st.trim.block)
@@ -411,7 +402,7 @@ def villa(rng, w, d, st, storeys=2):
             for x in (0, hw - 1):
                 hb.fill(x, 4 * k + 1, z, x, 4 * k + 2, z, pt.LIT if rng.random() < st.lit else pt.WINDOW)
     back_wall(hb, hw, hd + 1, storeys, st, rng)
-    interior(hb, hw, hd + 1, storeys, st, rng)
+    IN.corridor_block(hb, hw, hd + 1, storeys, "dark_oak", rng, "home")
     hb.fill(0, top, 1, hw - 1, top, hd, st.trim.block)
     pt.hip(hb, 0, hw - 1, 1, hd, top + 1, st.roof)
     chim = st.wall if st.wall is not pt.PLASTER else pt.RED
@@ -478,11 +469,7 @@ def warehouse(rng, w, d, st, storeys=4, name=None, end=None):
     name = name or rng.choice(("Brandt & Co.", "Kessel Bros.", "Tussock Wharf Co.", "Arden Shipping", "Holm & Vey",
                                "Loen Imperial Stores", "Morrow Freight", "Coldwater Tea Co."))
     v.sign(xc, 4, 0, S("spruce_wall_sign", facing="north"), ["", name, "Warehouse", ""])
-    for k in range(storeys):
-        pt.furnish(v, 1, w - 2, 2, d - 2, 4 * k + 1, rng, "store")
-        pt.ceiling_lamp(v, w // 2, 4 * k + 3, d // 2)
-    for k in range(storeys - 1):
-        pt.stair_run(v, 1, 3, 4 * k + 1, 4, "spruce")
+    IN.corridor_block(v, w, d, storeys, "spruce", rng, "store", front_door=False, back_door=False, z0=3, xd=xc)
     if end:
         end_windows(v, w, d, storeys, st, rng, end)
     return v
@@ -537,7 +524,7 @@ def factory(rng, w, d, st, name=None):
     name = name or rng.choice(("Tingen Iron Works", "Khoy Steam Mill", "Northgate Foundry", "Vey & Holm Engines",
                                "Ardent Textile Mill", "Lindon Brewery", "Coldwell Tannery", "Saltworth Soap Works"))
     v.sign(xc, hh - 1, 0, S("dark_oak_wall_sign", facing="north"), ["", name, "", ""])
-    pt.furnish(v, 1, w - 2, 2, d - 2, 1, rng, "store")
+    IN.one_room(v, 1, w - 2, 3, d - 2, 1, rng, "store", "spruce", xc)
     for x in range(3, w - 3, 6):
         v.fill(x, 1, d // 2, x + 1, 2, d // 2 + 1, S("b:crate") if rng.random() < 0.5 else S("anvil"))
     return v

@@ -129,9 +129,10 @@ public class SheathLayer extends RenderLayer<AbstractClientPlayer, PlayerModel<A
             case LEFT_HIP, RIGHT_HIP -> {
                 float side = mount == Mount.LEFT_HIP ? 1.0F : -1.0F;
                 if (gun) {
-                    // holstered: barrel down, grip up and to the back
-                    // low on the thigh: the grip at the belt, the barrel along the leg
+                    // holstered low on the thigh: barrel down along the leg, grip at the belt facing back
+                    // (turned half round about the body's vertical so the grip points behind, not ahead)
                     pose.translate(side * 0.335F, 0.86F, 0.02F);
+                    pose.mulPose(Axis.YP.rotationDegrees(180.0F));
                     pose.mulPose(Axis.XP.rotationDegrees(90.0F));
                     pose.mulPose(Axis.XP.rotationDegrees(-8.0F));
                     pose.scale(0.5F, 0.5F, 0.5F);

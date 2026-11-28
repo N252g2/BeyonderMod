@@ -5,6 +5,7 @@ from world import S, I, P, AIR, KEEP, Vol
 from terrain import tree
 import parts as pt
 import buildings as B
+import interiors as IN
 
 LANDMARKS = []
 
@@ -580,9 +581,13 @@ def blackthorn(g, cv, rng, marks):
     v.fill(0, 10, 0, w - 1, 10, 0, S("b:ashlar_stairs", facing="south", half="top"))
     pt.gable_x(v, 0, w - 1, 0, d - 1, 11, pt.SLATE, pt.STOCK)
     pt.chimney_stack(v, w - 1, d // 2, 11, 16, pt.STOCK, True, 1)
-    pt.furnish(v, 1, w - 2, 2, d - 2, 2, rng, "office")
-    pt.furnish(v, 1, w - 2, 2, d - 2, 6, rng, "office")
     pt.stair_run(v, w - 2, 3, 2, 4, "dark_oak")
+    keep = {(w - 2, z) for z in range(2, 8)} | {(xd, 2), (xd, 3), (xd + 1, 3), (6, 9)}
+    for y in (2, 6):
+        fl = IN.Floor(v, y, 1, w - 2, 2, d - 2)
+        fl.keep |= keep
+        IN.furnish_room(fl, rng, "office", "dark_oak", 4)
+        IN.table_with_chairs(fl, 4, 6, "dark_oak", rng)
     pt.ceiling_lamp(v, w // 2, 4, d // 2); pt.ceiling_lamp(v, w // 2, 9, d // 2)
     # 36 Zouteland Street: on the north side of the street, facing south toward the cathedral
     x = 404
@@ -702,9 +707,8 @@ def classical(rng, w, d, storeys, cols, name, wall="b:ashlar", roof=None, dome=F
         _dome(v, dcx, dcz, r, top + 2)
     else:
         pt.hip(v, 1, w - 2, 3, d - 2, top + 1, roof)
-    for k in range(storeys):
-        pt.furnish(v, 1, w - 2, 3, d - 2, sh * k + 1, rng, "office")
-        pt.ceiling_lamp(v, w // 2, sh * k + sh - 1, d // 2)
+    IN.corridor_block(v, w, d, storeys, "dark_oak", rng, "office", h=sh, front_door=False, back_door=False, z0=4,
+                      entry=2)
     return v
 
 
@@ -751,11 +755,8 @@ def college_range(rng, w, d, storeys, wall, trim, roof, lit=0.4, door=True):
             v.fill(x, 0, 0, x, top - 1, 0, wall.block) if False else None
     if door:
         xd = w // 2
-        v.fill(xd, 1, 1, xd, 3, 1, AIR)
-        v.set(xd, 3, 1, trim.stairs("east", "top")) if False else v.set(xd, 3, 1, AIR)
-        pt.door(v, xd, 1, 2, "oak", "north")
-        v.set(xd, 3, 2, S("glass_pane"))
-        v.set(xd, 4, 1, trim.block)
+        v.set(xd, 3, 1, S("glass_pane"))
+        v.set(xd, 4, 0, trim.stairs("south", "top"))
         v.set(xd, 0, 0, trim.stairs("south"))
     v.fill(0, top, 0, w - 1, top, 0, trim.stairs("south", "top"))
     ridge = steep_gable_x(v, 0, w - 1, 0, d, top + 1, roof, wall.block)
@@ -773,11 +774,7 @@ def college_range(rng, w, d, storeys, wall, trim, roof, lit=0.4, door=True):
         pt.chimney_stack(v, x, d // 2, top, ridge + 1, wall, rng.random() < 0.4, 2)
     if wall is pt.RED or wall is pt.STOCK:
         pt.ivy(v, rng, 0, w - 1, top - 1, 0, "south", 0.18)
-    for k in range(storeys - 1):
-        pt.stair_run(v, w - 2, 3, 4 * k + 1, 4, "oak")
-    for k in range(storeys):
-        pt.furnish(v, 1, w - 2, 2, d - 2, 4 * k + 1, rng, "office")
-        pt.ceiling_lamp(v, w // 2, 4 * k + 3, d // 2)
+    IN.corridor_block(v, w, d, storeys, "oak", rng, "office", front_door=door, back_door=door)
     return v
 
 

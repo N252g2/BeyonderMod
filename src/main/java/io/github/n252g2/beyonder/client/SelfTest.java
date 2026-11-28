@@ -86,7 +86,12 @@ public final class SelfTest {
                 mc.options.hideGui = true;
                 mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);
             }
-            case 90 -> shot(mc, "01_sheathed_front");
+            case 83, 84, 85 -> turnBody(mc, 50.0F);
+            case 86 -> shot(mc, "01b_holster_right");
+            case 87, 88 -> turnBody(mc, -50.0F);
+            case 89 -> shot(mc, "01c_holster_left");
+            case 90 -> turnBody(mc, 0.0F);
+            case 91 -> shot(mc, "01_sheathed_front");
             case 92 -> mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
             case 100 -> shot(mc, "02_sheathed_back");
             case 102 -> {
@@ -190,6 +195,12 @@ public final class SelfTest {
             case 440 -> mc.stop();
             default -> {}
         }
+    }
+
+    /** Turn the body against the head (the camera follows the head), so a hip can be seen from the side. */
+    private static void turnBody(Minecraft mc, float by) {
+        mc.player.yBodyRot = mc.player.getYRot() + by;
+        mc.player.yBodyRotO = mc.player.yBodyRot;
     }
 
     private static void shot(Minecraft mc, String name) {
